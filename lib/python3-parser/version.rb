@@ -1,3 +1,3 @@
-module PythonParser
+module Python3Parser
   VERSION = '1.0.0'
 end

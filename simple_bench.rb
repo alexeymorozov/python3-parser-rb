@@ -1,4 +1,4 @@
-require 'python-parser'
+require 'python3-parser'
 require 'benchmark/ips'
 
 class MyVisitor < Python3Parser::Visitor
