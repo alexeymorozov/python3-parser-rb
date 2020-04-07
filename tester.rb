@@ -2,6 +2,7 @@ require 'python3-parser'
 
 class MyVisitor < Python3Parser::Visitor
   def visit_atom_expr(ctx)
+    puts ctx.text
     visit_children(ctx)
   end
 end

@@ -25,6 +25,10 @@ public:
     return this -> orig;
   }
 
+  std::string getText() {
+    return this -> orig -> getText();
+  }
+
 protected:
   tree::ParseTree* orig;
 };
@@ -3399,12 +3403,14 @@ void Init_python3_parser() {
   rb_cSingle_inputContext = rb_mPython3Parser
     .define_class<Single_inputContextProxy, ContextProxy>("Single_inputContext")
     .define_method("simple_stmt", &Single_inputContextProxy::simple_stmt)
-    .define_method("compound_stmt", &Single_inputContextProxy::compound_stmt);
+    .define_method("compound_stmt", &Single_inputContextProxy::compound_stmt)
+    .define_method("text", &Single_inputContextProxy::getText);
 
   rb_cSimple_stmtContext = rb_mPython3Parser
     .define_class<Simple_stmtContextProxy, ContextProxy>("Simple_stmtContext")
     .define_method("small_stmt", &Simple_stmtContextProxy::small_stmt)
-    .define_method("small_stmt_at", &Simple_stmtContextProxy::small_stmtAt);
+    .define_method("small_stmt_at", &Simple_stmtContextProxy::small_stmtAt)
+    .define_method("text", &Simple_stmtContextProxy::getText);
 
   rb_cCompound_stmtContext = rb_mPython3Parser
     .define_class<Compound_stmtContextProxy, ContextProxy>("Compound_stmtContext")
@@ -3416,104 +3422,124 @@ void Init_python3_parser() {
     .define_method("funcdef", &Compound_stmtContextProxy::funcdef)
     .define_method("classdef", &Compound_stmtContextProxy::classdef)
     .define_method("decorated", &Compound_stmtContextProxy::decorated)
-    .define_method("async_stmt", &Compound_stmtContextProxy::async_stmt);
+    .define_method("async_stmt", &Compound_stmtContextProxy::async_stmt)
+    .define_method("text", &Compound_stmtContextProxy::getText);
 
   rb_cFile_inputContext = rb_mPython3Parser
     .define_class<File_inputContextProxy, ContextProxy>("File_inputContext")
     .define_method("stmt", &File_inputContextProxy::stmt)
-    .define_method("stmt_at", &File_inputContextProxy::stmtAt);
+    .define_method("stmt_at", &File_inputContextProxy::stmtAt)
+    .define_method("text", &File_inputContextProxy::getText);
 
   rb_cStmtContext = rb_mPython3Parser
     .define_class<StmtContextProxy, ContextProxy>("StmtContext")
     .define_method("simple_stmt", &StmtContextProxy::simple_stmt)
-    .define_method("compound_stmt", &StmtContextProxy::compound_stmt);
+    .define_method("compound_stmt", &StmtContextProxy::compound_stmt)
+    .define_method("text", &StmtContextProxy::getText);
 
   rb_cEval_inputContext = rb_mPython3Parser
     .define_class<Eval_inputContextProxy, ContextProxy>("Eval_inputContext")
-    .define_method("testlist", &Eval_inputContextProxy::testlist);
+    .define_method("testlist", &Eval_inputContextProxy::testlist)
+    .define_method("text", &Eval_inputContextProxy::getText);
 
   rb_cTestlistContext = rb_mPython3Parser
     .define_class<TestlistContextProxy, ContextProxy>("TestlistContext")
     .define_method("test", &TestlistContextProxy::test)
-    .define_method("test_at", &TestlistContextProxy::testAt);
+    .define_method("test_at", &TestlistContextProxy::testAt)
+    .define_method("text", &TestlistContextProxy::getText);
 
   rb_cDecoratorContext = rb_mPython3Parser
     .define_class<DecoratorContextProxy, ContextProxy>("DecoratorContext")
     .define_method("dotted_name", &DecoratorContextProxy::dotted_name)
-    .define_method("arglist", &DecoratorContextProxy::arglist);
+    .define_method("arglist", &DecoratorContextProxy::arglist)
+    .define_method("text", &DecoratorContextProxy::getText);
 
   rb_cDotted_nameContext = rb_mPython3Parser
-    .define_class<Dotted_nameContextProxy, ContextProxy>("Dotted_nameContext");
+    .define_class<Dotted_nameContextProxy, ContextProxy>("Dotted_nameContext")
+    .define_method("text", &Dotted_nameContextProxy::getText);
 
   rb_cArglistContext = rb_mPython3Parser
     .define_class<ArglistContextProxy, ContextProxy>("ArglistContext")
     .define_method("argument", &ArglistContextProxy::argument)
-    .define_method("argument_at", &ArglistContextProxy::argumentAt);
+    .define_method("argument_at", &ArglistContextProxy::argumentAt)
+    .define_method("text", &ArglistContextProxy::getText);
 
   rb_cDecoratorsContext = rb_mPython3Parser
     .define_class<DecoratorsContextProxy, ContextProxy>("DecoratorsContext")
     .define_method("decorator", &DecoratorsContextProxy::decorator)
-    .define_method("decorator_at", &DecoratorsContextProxy::decoratorAt);
+    .define_method("decorator_at", &DecoratorsContextProxy::decoratorAt)
+    .define_method("text", &DecoratorsContextProxy::getText);
 
   rb_cDecoratedContext = rb_mPython3Parser
     .define_class<DecoratedContextProxy, ContextProxy>("DecoratedContext")
     .define_method("decorators", &DecoratedContextProxy::decorators)
     .define_method("classdef", &DecoratedContextProxy::classdef)
     .define_method("funcdef", &DecoratedContextProxy::funcdef)
-    .define_method("async_funcdef", &DecoratedContextProxy::async_funcdef);
+    .define_method("async_funcdef", &DecoratedContextProxy::async_funcdef)
+    .define_method("text", &DecoratedContextProxy::getText);
 
   rb_cClassdefContext = rb_mPython3Parser
     .define_class<ClassdefContextProxy, ContextProxy>("ClassdefContext")
     .define_method("suite", &ClassdefContextProxy::suite)
-    .define_method("arglist", &ClassdefContextProxy::arglist);
+    .define_method("arglist", &ClassdefContextProxy::arglist)
+    .define_method("text", &ClassdefContextProxy::getText);
 
   rb_cFuncdefContext = rb_mPython3Parser
     .define_class<FuncdefContextProxy, ContextProxy>("FuncdefContext")
     .define_method("parameters", &FuncdefContextProxy::parameters)
     .define_method("suite", &FuncdefContextProxy::suite)
-    .define_method("test", &FuncdefContextProxy::test);
+    .define_method("test", &FuncdefContextProxy::test)
+    .define_method("text", &FuncdefContextProxy::getText);
 
   rb_cAsync_funcdefContext = rb_mPython3Parser
     .define_class<Async_funcdefContextProxy, ContextProxy>("Async_funcdefContext")
-    .define_method("funcdef", &Async_funcdefContextProxy::funcdef);
+    .define_method("funcdef", &Async_funcdefContextProxy::funcdef)
+    .define_method("text", &Async_funcdefContextProxy::getText);
 
   rb_cParametersContext = rb_mPython3Parser
     .define_class<ParametersContextProxy, ContextProxy>("ParametersContext")
-    .define_method("typedargslist", &ParametersContextProxy::typedargslist);
+    .define_method("typedargslist", &ParametersContextProxy::typedargslist)
+    .define_method("text", &ParametersContextProxy::getText);
 
   rb_cSuiteContext = rb_mPython3Parser
     .define_class<SuiteContextProxy, ContextProxy>("SuiteContext")
     .define_method("simple_stmt", &SuiteContextProxy::simple_stmt)
     .define_method("stmt", &SuiteContextProxy::stmt)
-    .define_method("stmt_at", &SuiteContextProxy::stmtAt);
+    .define_method("stmt_at", &SuiteContextProxy::stmtAt)
+    .define_method("text", &SuiteContextProxy::getText);
 
   rb_cTestContext = rb_mPython3Parser
     .define_class<TestContextProxy, ContextProxy>("TestContext")
     .define_method("or_test", &TestContextProxy::or_test)
     .define_method("or_test_at", &TestContextProxy::or_testAt)
     .define_method("test", &TestContextProxy::test)
-    .define_method("lambdef", &TestContextProxy::lambdef);
+    .define_method("lambdef", &TestContextProxy::lambdef)
+    .define_method("text", &TestContextProxy::getText);
 
   rb_cTypedargslistContext = rb_mPython3Parser
     .define_class<TypedargslistContextProxy, ContextProxy>("TypedargslistContext")
     .define_method("tfpdef", &TypedargslistContextProxy::tfpdef)
     .define_method("tfpdef_at", &TypedargslistContextProxy::tfpdefAt)
     .define_method("test", &TypedargslistContextProxy::test)
-    .define_method("test_at", &TypedargslistContextProxy::testAt);
+    .define_method("test_at", &TypedargslistContextProxy::testAt)
+    .define_method("text", &TypedargslistContextProxy::getText);
 
   rb_cTfpdefContext = rb_mPython3Parser
     .define_class<TfpdefContextProxy, ContextProxy>("TfpdefContext")
-    .define_method("test", &TfpdefContextProxy::test);
+    .define_method("test", &TfpdefContextProxy::test)
+    .define_method("text", &TfpdefContextProxy::getText);
 
   rb_cVarargslistContext = rb_mPython3Parser
     .define_class<VarargslistContextProxy, ContextProxy>("VarargslistContext")
     .define_method("vfpdef", &VarargslistContextProxy::vfpdef)
     .define_method("vfpdef_at", &VarargslistContextProxy::vfpdefAt)
     .define_method("test", &VarargslistContextProxy::test)
-    .define_method("test_at", &VarargslistContextProxy::testAt);
+    .define_method("test_at", &VarargslistContextProxy::testAt)
+    .define_method("text", &VarargslistContextProxy::getText);
 
   rb_cVfpdefContext = rb_mPython3Parser
-    .define_class<VfpdefContextProxy, ContextProxy>("VfpdefContext");
+    .define_class<VfpdefContextProxy, ContextProxy>("VfpdefContext")
+    .define_method("text", &VfpdefContextProxy::getText);
 
   rb_cSmall_stmtContext = rb_mPython3Parser
     .define_class<Small_stmtContextProxy, ContextProxy>("Small_stmtContext")
@@ -3524,7 +3550,8 @@ void Init_python3_parser() {
     .define_method("import_stmt", &Small_stmtContextProxy::import_stmt)
     .define_method("global_stmt", &Small_stmtContextProxy::global_stmt)
     .define_method("nonlocal_stmt", &Small_stmtContextProxy::nonlocal_stmt)
-    .define_method("assert_stmt", &Small_stmtContextProxy::assert_stmt);
+    .define_method("assert_stmt", &Small_stmtContextProxy::assert_stmt)
+    .define_method("text", &Small_stmtContextProxy::getText);
 
   rb_cExpr_stmtContext = rb_mPython3Parser
     .define_class<Expr_stmtContextProxy, ContextProxy>("Expr_stmtContext")
@@ -3534,14 +3561,17 @@ void Init_python3_parser() {
     .define_method("augassign", &Expr_stmtContextProxy::augassign)
     .define_method("yield_expr", &Expr_stmtContextProxy::yield_expr)
     .define_method("yield_expr_at", &Expr_stmtContextProxy::yield_exprAt)
-    .define_method("testlist", &Expr_stmtContextProxy::testlist);
+    .define_method("testlist", &Expr_stmtContextProxy::testlist)
+    .define_method("text", &Expr_stmtContextProxy::getText);
 
   rb_cDel_stmtContext = rb_mPython3Parser
     .define_class<Del_stmtContextProxy, ContextProxy>("Del_stmtContext")
-    .define_method("exprlist", &Del_stmtContextProxy::exprlist);
+    .define_method("exprlist", &Del_stmtContextProxy::exprlist)
+    .define_method("text", &Del_stmtContextProxy::getText);
 
   rb_cPass_stmtContext = rb_mPython3Parser
-    .define_class<Pass_stmtContextProxy, ContextProxy>("Pass_stmtContext");
+    .define_class<Pass_stmtContextProxy, ContextProxy>("Pass_stmtContext")
+    .define_method("text", &Pass_stmtContextProxy::getText);
 
   rb_cFlow_stmtContext = rb_mPython3Parser
     .define_class<Flow_stmtContextProxy, ContextProxy>("Flow_stmtContext")
@@ -3549,243 +3579,292 @@ void Init_python3_parser() {
     .define_method("continue_stmt", &Flow_stmtContextProxy::continue_stmt)
     .define_method("return_stmt", &Flow_stmtContextProxy::return_stmt)
     .define_method("raise_stmt", &Flow_stmtContextProxy::raise_stmt)
-    .define_method("yield_stmt", &Flow_stmtContextProxy::yield_stmt);
+    .define_method("yield_stmt", &Flow_stmtContextProxy::yield_stmt)
+    .define_method("text", &Flow_stmtContextProxy::getText);
 
   rb_cImport_stmtContext = rb_mPython3Parser
     .define_class<Import_stmtContextProxy, ContextProxy>("Import_stmtContext")
     .define_method("import_name", &Import_stmtContextProxy::import_name)
-    .define_method("import_from", &Import_stmtContextProxy::import_from);
+    .define_method("import_from", &Import_stmtContextProxy::import_from)
+    .define_method("text", &Import_stmtContextProxy::getText);
 
   rb_cGlobal_stmtContext = rb_mPython3Parser
-    .define_class<Global_stmtContextProxy, ContextProxy>("Global_stmtContext");
+    .define_class<Global_stmtContextProxy, ContextProxy>("Global_stmtContext")
+    .define_method("text", &Global_stmtContextProxy::getText);
 
   rb_cNonlocal_stmtContext = rb_mPython3Parser
-    .define_class<Nonlocal_stmtContextProxy, ContextProxy>("Nonlocal_stmtContext");
+    .define_class<Nonlocal_stmtContextProxy, ContextProxy>("Nonlocal_stmtContext")
+    .define_method("text", &Nonlocal_stmtContextProxy::getText);
 
   rb_cAssert_stmtContext = rb_mPython3Parser
     .define_class<Assert_stmtContextProxy, ContextProxy>("Assert_stmtContext")
     .define_method("test", &Assert_stmtContextProxy::test)
-    .define_method("test_at", &Assert_stmtContextProxy::testAt);
+    .define_method("test_at", &Assert_stmtContextProxy::testAt)
+    .define_method("text", &Assert_stmtContextProxy::getText);
 
   rb_cTestlist_star_exprContext = rb_mPython3Parser
     .define_class<Testlist_star_exprContextProxy, ContextProxy>("Testlist_star_exprContext")
     .define_method("test", &Testlist_star_exprContextProxy::test)
     .define_method("test_at", &Testlist_star_exprContextProxy::testAt)
     .define_method("star_expr", &Testlist_star_exprContextProxy::star_expr)
-    .define_method("star_expr_at", &Testlist_star_exprContextProxy::star_exprAt);
+    .define_method("star_expr_at", &Testlist_star_exprContextProxy::star_exprAt)
+    .define_method("text", &Testlist_star_exprContextProxy::getText);
 
   rb_cAnnassignContext = rb_mPython3Parser
     .define_class<AnnassignContextProxy, ContextProxy>("AnnassignContext")
     .define_method("test", &AnnassignContextProxy::test)
-    .define_method("test_at", &AnnassignContextProxy::testAt);
+    .define_method("test_at", &AnnassignContextProxy::testAt)
+    .define_method("text", &AnnassignContextProxy::getText);
 
   rb_cAugassignContext = rb_mPython3Parser
-    .define_class<AugassignContextProxy, ContextProxy>("AugassignContext");
+    .define_class<AugassignContextProxy, ContextProxy>("AugassignContext")
+    .define_method("text", &AugassignContextProxy::getText);
 
   rb_cYield_exprContext = rb_mPython3Parser
     .define_class<Yield_exprContextProxy, ContextProxy>("Yield_exprContext")
-    .define_method("yield_arg", &Yield_exprContextProxy::yield_arg);
+    .define_method("yield_arg", &Yield_exprContextProxy::yield_arg)
+    .define_method("text", &Yield_exprContextProxy::getText);
 
   rb_cStar_exprContext = rb_mPython3Parser
     .define_class<Star_exprContextProxy, ContextProxy>("Star_exprContext")
-    .define_method("expr", &Star_exprContextProxy::expr);
+    .define_method("expr", &Star_exprContextProxy::expr)
+    .define_method("text", &Star_exprContextProxy::getText);
 
   rb_cExprlistContext = rb_mPython3Parser
     .define_class<ExprlistContextProxy, ContextProxy>("ExprlistContext")
     .define_method("expr", &ExprlistContextProxy::expr)
     .define_method("expr_at", &ExprlistContextProxy::exprAt)
     .define_method("star_expr", &ExprlistContextProxy::star_expr)
-    .define_method("star_expr_at", &ExprlistContextProxy::star_exprAt);
+    .define_method("star_expr_at", &ExprlistContextProxy::star_exprAt)
+    .define_method("text", &ExprlistContextProxy::getText);
 
   rb_cBreak_stmtContext = rb_mPython3Parser
-    .define_class<Break_stmtContextProxy, ContextProxy>("Break_stmtContext");
+    .define_class<Break_stmtContextProxy, ContextProxy>("Break_stmtContext")
+    .define_method("text", &Break_stmtContextProxy::getText);
 
   rb_cContinue_stmtContext = rb_mPython3Parser
-    .define_class<Continue_stmtContextProxy, ContextProxy>("Continue_stmtContext");
+    .define_class<Continue_stmtContextProxy, ContextProxy>("Continue_stmtContext")
+    .define_method("text", &Continue_stmtContextProxy::getText);
 
   rb_cReturn_stmtContext = rb_mPython3Parser
     .define_class<Return_stmtContextProxy, ContextProxy>("Return_stmtContext")
-    .define_method("testlist", &Return_stmtContextProxy::testlist);
+    .define_method("testlist", &Return_stmtContextProxy::testlist)
+    .define_method("text", &Return_stmtContextProxy::getText);
 
   rb_cRaise_stmtContext = rb_mPython3Parser
     .define_class<Raise_stmtContextProxy, ContextProxy>("Raise_stmtContext")
     .define_method("test", &Raise_stmtContextProxy::test)
-    .define_method("test_at", &Raise_stmtContextProxy::testAt);
+    .define_method("test_at", &Raise_stmtContextProxy::testAt)
+    .define_method("text", &Raise_stmtContextProxy::getText);
 
   rb_cYield_stmtContext = rb_mPython3Parser
     .define_class<Yield_stmtContextProxy, ContextProxy>("Yield_stmtContext")
-    .define_method("yield_expr", &Yield_stmtContextProxy::yield_expr);
+    .define_method("yield_expr", &Yield_stmtContextProxy::yield_expr)
+    .define_method("text", &Yield_stmtContextProxy::getText);
 
   rb_cImport_nameContext = rb_mPython3Parser
     .define_class<Import_nameContextProxy, ContextProxy>("Import_nameContext")
-    .define_method("dotted_as_names", &Import_nameContextProxy::dotted_as_names);
+    .define_method("dotted_as_names", &Import_nameContextProxy::dotted_as_names)
+    .define_method("text", &Import_nameContextProxy::getText);
 
   rb_cImport_fromContext = rb_mPython3Parser
     .define_class<Import_fromContextProxy, ContextProxy>("Import_fromContext")
     .define_method("dotted_name", &Import_fromContextProxy::dotted_name)
-    .define_method("import_as_names", &Import_fromContextProxy::import_as_names);
+    .define_method("import_as_names", &Import_fromContextProxy::import_as_names)
+    .define_method("text", &Import_fromContextProxy::getText);
 
   rb_cDotted_as_namesContext = rb_mPython3Parser
     .define_class<Dotted_as_namesContextProxy, ContextProxy>("Dotted_as_namesContext")
     .define_method("dotted_as_name", &Dotted_as_namesContextProxy::dotted_as_name)
-    .define_method("dotted_as_name_at", &Dotted_as_namesContextProxy::dotted_as_nameAt);
+    .define_method("dotted_as_name_at", &Dotted_as_namesContextProxy::dotted_as_nameAt)
+    .define_method("text", &Dotted_as_namesContextProxy::getText);
 
   rb_cImport_as_namesContext = rb_mPython3Parser
     .define_class<Import_as_namesContextProxy, ContextProxy>("Import_as_namesContext")
     .define_method("import_as_name", &Import_as_namesContextProxy::import_as_name)
-    .define_method("import_as_name_at", &Import_as_namesContextProxy::import_as_nameAt);
+    .define_method("import_as_name_at", &Import_as_namesContextProxy::import_as_nameAt)
+    .define_method("text", &Import_as_namesContextProxy::getText);
 
   rb_cImport_as_nameContext = rb_mPython3Parser
-    .define_class<Import_as_nameContextProxy, ContextProxy>("Import_as_nameContext");
+    .define_class<Import_as_nameContextProxy, ContextProxy>("Import_as_nameContext")
+    .define_method("text", &Import_as_nameContextProxy::getText);
 
   rb_cDotted_as_nameContext = rb_mPython3Parser
     .define_class<Dotted_as_nameContextProxy, ContextProxy>("Dotted_as_nameContext")
-    .define_method("dotted_name", &Dotted_as_nameContextProxy::dotted_name);
+    .define_method("dotted_name", &Dotted_as_nameContextProxy::dotted_name)
+    .define_method("text", &Dotted_as_nameContextProxy::getText);
 
   rb_cIf_stmtContext = rb_mPython3Parser
     .define_class<If_stmtContextProxy, ContextProxy>("If_stmtContext")
     .define_method("test", &If_stmtContextProxy::test)
     .define_method("test_at", &If_stmtContextProxy::testAt)
     .define_method("suite", &If_stmtContextProxy::suite)
-    .define_method("suite_at", &If_stmtContextProxy::suiteAt);
+    .define_method("suite_at", &If_stmtContextProxy::suiteAt)
+    .define_method("text", &If_stmtContextProxy::getText);
 
   rb_cWhile_stmtContext = rb_mPython3Parser
     .define_class<While_stmtContextProxy, ContextProxy>("While_stmtContext")
     .define_method("test", &While_stmtContextProxy::test)
     .define_method("suite", &While_stmtContextProxy::suite)
-    .define_method("suite_at", &While_stmtContextProxy::suiteAt);
+    .define_method("suite_at", &While_stmtContextProxy::suiteAt)
+    .define_method("text", &While_stmtContextProxy::getText);
 
   rb_cFor_stmtContext = rb_mPython3Parser
     .define_class<For_stmtContextProxy, ContextProxy>("For_stmtContext")
     .define_method("exprlist", &For_stmtContextProxy::exprlist)
     .define_method("testlist", &For_stmtContextProxy::testlist)
     .define_method("suite", &For_stmtContextProxy::suite)
-    .define_method("suite_at", &For_stmtContextProxy::suiteAt);
+    .define_method("suite_at", &For_stmtContextProxy::suiteAt)
+    .define_method("text", &For_stmtContextProxy::getText);
 
   rb_cTry_stmtContext = rb_mPython3Parser
     .define_class<Try_stmtContextProxy, ContextProxy>("Try_stmtContext")
     .define_method("suite", &Try_stmtContextProxy::suite)
     .define_method("suite_at", &Try_stmtContextProxy::suiteAt)
     .define_method("except_clause", &Try_stmtContextProxy::except_clause)
-    .define_method("except_clause_at", &Try_stmtContextProxy::except_clauseAt);
+    .define_method("except_clause_at", &Try_stmtContextProxy::except_clauseAt)
+    .define_method("text", &Try_stmtContextProxy::getText);
 
   rb_cWith_stmtContext = rb_mPython3Parser
     .define_class<With_stmtContextProxy, ContextProxy>("With_stmtContext")
     .define_method("with_item", &With_stmtContextProxy::with_item)
     .define_method("with_item_at", &With_stmtContextProxy::with_itemAt)
-    .define_method("suite", &With_stmtContextProxy::suite);
+    .define_method("suite", &With_stmtContextProxy::suite)
+    .define_method("text", &With_stmtContextProxy::getText);
 
   rb_cAsync_stmtContext = rb_mPython3Parser
     .define_class<Async_stmtContextProxy, ContextProxy>("Async_stmtContext")
     .define_method("funcdef", &Async_stmtContextProxy::funcdef)
     .define_method("with_stmt", &Async_stmtContextProxy::with_stmt)
-    .define_method("for_stmt", &Async_stmtContextProxy::for_stmt);
+    .define_method("for_stmt", &Async_stmtContextProxy::for_stmt)
+    .define_method("text", &Async_stmtContextProxy::getText);
 
   rb_cExcept_clauseContext = rb_mPython3Parser
     .define_class<Except_clauseContextProxy, ContextProxy>("Except_clauseContext")
-    .define_method("test", &Except_clauseContextProxy::test);
+    .define_method("test", &Except_clauseContextProxy::test)
+    .define_method("text", &Except_clauseContextProxy::getText);
 
   rb_cWith_itemContext = rb_mPython3Parser
     .define_class<With_itemContextProxy, ContextProxy>("With_itemContext")
     .define_method("test", &With_itemContextProxy::test)
-    .define_method("expr", &With_itemContextProxy::expr);
+    .define_method("expr", &With_itemContextProxy::expr)
+    .define_method("text", &With_itemContextProxy::getText);
 
   rb_cExprContext = rb_mPython3Parser
     .define_class<ExprContextProxy, ContextProxy>("ExprContext")
     .define_method("xor_expr", &ExprContextProxy::xor_expr)
-    .define_method("xor_expr_at", &ExprContextProxy::xor_exprAt);
+    .define_method("xor_expr_at", &ExprContextProxy::xor_exprAt)
+    .define_method("text", &ExprContextProxy::getText);
 
   rb_cOr_testContext = rb_mPython3Parser
     .define_class<Or_testContextProxy, ContextProxy>("Or_testContext")
     .define_method("and_test", &Or_testContextProxy::and_test)
-    .define_method("and_test_at", &Or_testContextProxy::and_testAt);
+    .define_method("and_test_at", &Or_testContextProxy::and_testAt)
+    .define_method("text", &Or_testContextProxy::getText);
 
   rb_cLambdefContext = rb_mPython3Parser
     .define_class<LambdefContextProxy, ContextProxy>("LambdefContext")
     .define_method("test", &LambdefContextProxy::test)
-    .define_method("varargslist", &LambdefContextProxy::varargslist);
+    .define_method("varargslist", &LambdefContextProxy::varargslist)
+    .define_method("text", &LambdefContextProxy::getText);
 
   rb_cTest_nocondContext = rb_mPython3Parser
     .define_class<Test_nocondContextProxy, ContextProxy>("Test_nocondContext")
     .define_method("or_test", &Test_nocondContextProxy::or_test)
-    .define_method("lambdef_nocond", &Test_nocondContextProxy::lambdef_nocond);
+    .define_method("lambdef_nocond", &Test_nocondContextProxy::lambdef_nocond)
+    .define_method("text", &Test_nocondContextProxy::getText);
 
   rb_cLambdef_nocondContext = rb_mPython3Parser
     .define_class<Lambdef_nocondContextProxy, ContextProxy>("Lambdef_nocondContext")
     .define_method("test_nocond", &Lambdef_nocondContextProxy::test_nocond)
-    .define_method("varargslist", &Lambdef_nocondContextProxy::varargslist);
+    .define_method("varargslist", &Lambdef_nocondContextProxy::varargslist)
+    .define_method("text", &Lambdef_nocondContextProxy::getText);
 
   rb_cAnd_testContext = rb_mPython3Parser
     .define_class<And_testContextProxy, ContextProxy>("And_testContext")
     .define_method("not_test", &And_testContextProxy::not_test)
-    .define_method("not_test_at", &And_testContextProxy::not_testAt);
+    .define_method("not_test_at", &And_testContextProxy::not_testAt)
+    .define_method("text", &And_testContextProxy::getText);
 
   rb_cNot_testContext = rb_mPython3Parser
     .define_class<Not_testContextProxy, ContextProxy>("Not_testContext")
     .define_method("not_test", &Not_testContextProxy::not_test)
-    .define_method("comparison", &Not_testContextProxy::comparison);
+    .define_method("comparison", &Not_testContextProxy::comparison)
+    .define_method("text", &Not_testContextProxy::getText);
 
   rb_cComparisonContext = rb_mPython3Parser
     .define_class<ComparisonContextProxy, ContextProxy>("ComparisonContext")
     .define_method("expr", &ComparisonContextProxy::expr)
     .define_method("expr_at", &ComparisonContextProxy::exprAt)
     .define_method("comp_op", &ComparisonContextProxy::comp_op)
-    .define_method("comp_op_at", &ComparisonContextProxy::comp_opAt);
+    .define_method("comp_op_at", &ComparisonContextProxy::comp_opAt)
+    .define_method("text", &ComparisonContextProxy::getText);
 
   rb_cComp_opContext = rb_mPython3Parser
-    .define_class<Comp_opContextProxy, ContextProxy>("Comp_opContext");
+    .define_class<Comp_opContextProxy, ContextProxy>("Comp_opContext")
+    .define_method("text", &Comp_opContextProxy::getText);
 
   rb_cXor_exprContext = rb_mPython3Parser
     .define_class<Xor_exprContextProxy, ContextProxy>("Xor_exprContext")
     .define_method("and_expr", &Xor_exprContextProxy::and_expr)
-    .define_method("and_expr_at", &Xor_exprContextProxy::and_exprAt);
+    .define_method("and_expr_at", &Xor_exprContextProxy::and_exprAt)
+    .define_method("text", &Xor_exprContextProxy::getText);
 
   rb_cAnd_exprContext = rb_mPython3Parser
     .define_class<And_exprContextProxy, ContextProxy>("And_exprContext")
     .define_method("shift_expr", &And_exprContextProxy::shift_expr)
-    .define_method("shift_expr_at", &And_exprContextProxy::shift_exprAt);
+    .define_method("shift_expr_at", &And_exprContextProxy::shift_exprAt)
+    .define_method("text", &And_exprContextProxy::getText);
 
   rb_cShift_exprContext = rb_mPython3Parser
     .define_class<Shift_exprContextProxy, ContextProxy>("Shift_exprContext")
     .define_method("arith_expr", &Shift_exprContextProxy::arith_expr)
-    .define_method("arith_expr_at", &Shift_exprContextProxy::arith_exprAt);
+    .define_method("arith_expr_at", &Shift_exprContextProxy::arith_exprAt)
+    .define_method("text", &Shift_exprContextProxy::getText);
 
   rb_cArith_exprContext = rb_mPython3Parser
     .define_class<Arith_exprContextProxy, ContextProxy>("Arith_exprContext")
     .define_method("term", &Arith_exprContextProxy::term)
-    .define_method("term_at", &Arith_exprContextProxy::termAt);
+    .define_method("term_at", &Arith_exprContextProxy::termAt)
+    .define_method("text", &Arith_exprContextProxy::getText);
 
   rb_cTermContext = rb_mPython3Parser
     .define_class<TermContextProxy, ContextProxy>("TermContext")
     .define_method("factor", &TermContextProxy::factor)
-    .define_method("factor_at", &TermContextProxy::factorAt);
+    .define_method("factor_at", &TermContextProxy::factorAt)
+    .define_method("text", &TermContextProxy::getText);
 
   rb_cFactorContext = rb_mPython3Parser
     .define_class<FactorContextProxy, ContextProxy>("FactorContext")
     .define_method("factor", &FactorContextProxy::factor)
-    .define_method("power", &FactorContextProxy::power);
+    .define_method("power", &FactorContextProxy::power)
+    .define_method("text", &FactorContextProxy::getText);
 
   rb_cPowerContext = rb_mPython3Parser
     .define_class<PowerContextProxy, ContextProxy>("PowerContext")
     .define_method("atom_expr", &PowerContextProxy::atom_expr)
-    .define_method("factor", &PowerContextProxy::factor);
+    .define_method("factor", &PowerContextProxy::factor)
+    .define_method("text", &PowerContextProxy::getText);
 
   rb_cAtom_exprContext = rb_mPython3Parser
     .define_class<Atom_exprContextProxy, ContextProxy>("Atom_exprContext")
     .define_method("atom", &Atom_exprContextProxy::atom)
     .define_method("trailer", &Atom_exprContextProxy::trailer)
-    .define_method("trailer_at", &Atom_exprContextProxy::trailerAt);
+    .define_method("trailer_at", &Atom_exprContextProxy::trailerAt)
+    .define_method("text", &Atom_exprContextProxy::getText);
 
   rb_cAtomContext = rb_mPython3Parser
     .define_class<AtomContextProxy, ContextProxy>("AtomContext")
     .define_method("yield_expr", &AtomContextProxy::yield_expr)
     .define_method("testlist_comp", &AtomContextProxy::testlist_comp)
-    .define_method("dictorsetmaker", &AtomContextProxy::dictorsetmaker);
+    .define_method("dictorsetmaker", &AtomContextProxy::dictorsetmaker)
+    .define_method("text", &AtomContextProxy::getText);
 
   rb_cTrailerContext = rb_mPython3Parser
     .define_class<TrailerContextProxy, ContextProxy>("TrailerContext")
     .define_method("arglist", &TrailerContextProxy::arglist)
-    .define_method("subscriptlist", &TrailerContextProxy::subscriptlist);
+    .define_method("subscriptlist", &TrailerContextProxy::subscriptlist)
+    .define_method("text", &TrailerContextProxy::getText);
 
   rb_cTestlist_compContext = rb_mPython3Parser
     .define_class<Testlist_compContextProxy, ContextProxy>("Testlist_compContext")
@@ -3793,7 +3872,8 @@ void Init_python3_parser() {
     .define_method("test_at", &Testlist_compContextProxy::testAt)
     .define_method("star_expr", &Testlist_compContextProxy::star_expr)
     .define_method("star_expr_at", &Testlist_compContextProxy::star_exprAt)
-    .define_method("comp_for", &Testlist_compContextProxy::comp_for);
+    .define_method("comp_for", &Testlist_compContextProxy::comp_for)
+    .define_method("text", &Testlist_compContextProxy::getText);
 
   rb_cDictorsetmakerContext = rb_mPython3Parser
     .define_class<DictorsetmakerContextProxy, ContextProxy>("DictorsetmakerContext")
@@ -3803,51 +3883,61 @@ void Init_python3_parser() {
     .define_method("expr_at", &DictorsetmakerContextProxy::exprAt)
     .define_method("comp_for", &DictorsetmakerContextProxy::comp_for)
     .define_method("star_expr", &DictorsetmakerContextProxy::star_expr)
-    .define_method("star_expr_at", &DictorsetmakerContextProxy::star_exprAt);
+    .define_method("star_expr_at", &DictorsetmakerContextProxy::star_exprAt)
+    .define_method("text", &DictorsetmakerContextProxy::getText);
 
   rb_cComp_forContext = rb_mPython3Parser
     .define_class<Comp_forContextProxy, ContextProxy>("Comp_forContext")
     .define_method("exprlist", &Comp_forContextProxy::exprlist)
     .define_method("or_test", &Comp_forContextProxy::or_test)
-    .define_method("comp_iter", &Comp_forContextProxy::comp_iter);
+    .define_method("comp_iter", &Comp_forContextProxy::comp_iter)
+    .define_method("text", &Comp_forContextProxy::getText);
 
   rb_cSubscriptlistContext = rb_mPython3Parser
     .define_class<SubscriptlistContextProxy, ContextProxy>("SubscriptlistContext")
     .define_method("subscript", &SubscriptlistContextProxy::subscript)
-    .define_method("subscript_at", &SubscriptlistContextProxy::subscriptAt);
+    .define_method("subscript_at", &SubscriptlistContextProxy::subscriptAt)
+    .define_method("text", &SubscriptlistContextProxy::getText);
 
   rb_cSubscriptContext = rb_mPython3Parser
     .define_class<SubscriptContextProxy, ContextProxy>("SubscriptContext")
     .define_method("test", &SubscriptContextProxy::test)
     .define_method("test_at", &SubscriptContextProxy::testAt)
-    .define_method("sliceop", &SubscriptContextProxy::sliceop);
+    .define_method("sliceop", &SubscriptContextProxy::sliceop)
+    .define_method("text", &SubscriptContextProxy::getText);
 
   rb_cSliceopContext = rb_mPython3Parser
     .define_class<SliceopContextProxy, ContextProxy>("SliceopContext")
-    .define_method("test", &SliceopContextProxy::test);
+    .define_method("test", &SliceopContextProxy::test)
+    .define_method("text", &SliceopContextProxy::getText);
 
   rb_cArgumentContext = rb_mPython3Parser
     .define_class<ArgumentContextProxy, ContextProxy>("ArgumentContext")
     .define_method("test", &ArgumentContextProxy::test)
     .define_method("test_at", &ArgumentContextProxy::testAt)
-    .define_method("comp_for", &ArgumentContextProxy::comp_for);
+    .define_method("comp_for", &ArgumentContextProxy::comp_for)
+    .define_method("text", &ArgumentContextProxy::getText);
 
   rb_cComp_iterContext = rb_mPython3Parser
     .define_class<Comp_iterContextProxy, ContextProxy>("Comp_iterContext")
     .define_method("comp_for", &Comp_iterContextProxy::comp_for)
-    .define_method("comp_if", &Comp_iterContextProxy::comp_if);
+    .define_method("comp_if", &Comp_iterContextProxy::comp_if)
+    .define_method("text", &Comp_iterContextProxy::getText);
 
   rb_cComp_ifContext = rb_mPython3Parser
     .define_class<Comp_ifContextProxy, ContextProxy>("Comp_ifContext")
     .define_method("test_nocond", &Comp_ifContextProxy::test_nocond)
-    .define_method("comp_iter", &Comp_ifContextProxy::comp_iter);
+    .define_method("comp_iter", &Comp_ifContextProxy::comp_iter)
+    .define_method("text", &Comp_ifContextProxy::getText);
 
   rb_cEncoding_declContext = rb_mPython3Parser
-    .define_class<Encoding_declContextProxy, ContextProxy>("Encoding_declContext");
+    .define_class<Encoding_declContextProxy, ContextProxy>("Encoding_declContext")
+    .define_method("text", &Encoding_declContextProxy::getText);
 
   rb_cYield_argContext = rb_mPython3Parser
     .define_class<Yield_argContextProxy, ContextProxy>("Yield_argContext")
     .define_method("test", &Yield_argContextProxy::test)
-    .define_method("testlist", &Yield_argContextProxy::testlist);
+    .define_method("testlist", &Yield_argContextProxy::testlist)
+    .define_method("text", &Yield_argContextProxy::getText);
 }
 
