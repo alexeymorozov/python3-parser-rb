@@ -1,19 +1,19 @@
 
-// Generated from Python3.g4 by ANTLR 4.8
+// Generated from Python3Parser.g4 by ANTLR 4.8
 
 #pragma once
 
 
 #include "antlr4-runtime.h"
-#include "Python3Listener.h"
+#include "Python3ParserListener.h"
 
 
 /**
- * This class provides an empty implementation of Python3Listener,
+ * This class provides an empty implementation of Python3ParserListener,
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-class  Python3BaseListener : public Python3Listener {
+class  Python3ParserBaseListener : public Python3ParserListener {
 public:
 
   virtual void enterSingle_input(Python3Parser::Single_inputContext * /*ctx*/) override { }

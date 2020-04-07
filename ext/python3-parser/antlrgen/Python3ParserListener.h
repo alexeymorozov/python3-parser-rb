@@ -1,5 +1,5 @@
 
-// Generated from Python3.g4 by ANTLR 4.8
+// Generated from Python3Parser.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -11,7 +11,7 @@
 /**
  * This interface defines an abstract listener for a parse tree produced by Python3Parser.
  */
-class  Python3Listener : public antlr4::tree::ParseTreeListener {
+class  Python3ParserListener : public antlr4::tree::ParseTreeListener {
 public:
 
   virtual void enterSingle_input(Python3Parser::Single_inputContext *ctx) = 0;

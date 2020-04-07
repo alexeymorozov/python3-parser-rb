@@ -1,18 +1,18 @@
 
-// Generated from Python3.g4 by ANTLR 4.8
+// Generated from Python3Parser.g4 by ANTLR 4.8
 
 #pragma once
 
 
 #include "antlr4-runtime.h"
-#include "Python3Visitor.h"
+#include "Python3ParserVisitor.h"
 
 
 /**
- * This class provides an empty implementation of Python3Visitor, which can be
+ * This class provides an empty implementation of Python3ParserVisitor, which can be
  * extended to create a visitor which only needs to handle a subset of the available methods.
  */
-class  Python3BaseVisitor : public Python3Visitor {
+class  Python3ParserBaseVisitor : public Python3ParserVisitor {
 public:
 
   virtual antlrcpp::Any visitSingle_input(Python3Parser::Single_inputContext *ctx) override {

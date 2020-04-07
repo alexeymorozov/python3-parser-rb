@@ -3,7 +3,7 @@
 #include "antlr4-runtime.h"
 
 #include "Python3Parser.h"
-#include "Python3BaseVisitor.h"
+#include "Python3ParserBaseVisitor.h"
 #include "Python3Lexer.h"
 
 #include "rice/Array.hpp"
@@ -2777,7 +2777,7 @@ Object Yield_argContextProxy::testlist() {
 }
 
 
-class VisitorProxy : public Python3BaseVisitor, public Director {
+class VisitorProxy : public Python3ParserBaseVisitor, public Director {
 public:
   VisitorProxy(Object self) : Director(self) { }
 

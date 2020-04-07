@@ -1,5 +1,5 @@
 
-// Generated from Python3.g4 by ANTLR 4.8
+// Generated from Python3Parser.g4 by ANTLR 4.8
 
 #pragma once
 
@@ -13,7 +13,7 @@
  * This class defines an abstract visitor for a parse tree
  * produced by Python3Parser.
  */
-class  Python3Visitor : public antlr4::tree::AbstractParseTreeVisitor {
+class  Python3ParserVisitor : public antlr4::tree::AbstractParseTreeVisitor {
 public:
 
   /**
