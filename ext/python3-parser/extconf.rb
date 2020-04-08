@@ -28,7 +28,7 @@ include_paths.each do |include_path|
 
   Dir.chdir(File.expand_path('.', __dir__)) do
     Dir.glob("#{include_path}/*.cpp").each do |path|
-      $srcs << path
+      $srcs << File.expand_path(path)
     end
   end
 end
