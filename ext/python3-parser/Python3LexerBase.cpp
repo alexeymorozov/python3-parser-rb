@@ -26,6 +26,14 @@ void Python3LexerBase::emit(std::unique_ptr<antlr4::Token> newToken) {
   antlr4::Lexer::emit(std::move(newToken));
 }
 
+void Python3LexerBase::emitp(antlr4::Token* newToken) {
+  auto copy = new antlr4::CommonToken(newToken);
+  tokens -> push_back(copy);
+
+  auto uniqueToken = std::unique_ptr<antlr4::Token>(newToken);
+  antlr4::Lexer::emit(std::move(uniqueToken));
+}
+
 std::unique_ptr<antlr4::Token> Python3LexerBase::nextToken() {
   // Check if the end-of-file is ahead and there are still some DEDENTS expected.
   if (_input -> LA(1) == Python3Parser::EOF && !indents -> empty()) {
@@ -37,16 +45,16 @@ std::unique_ptr<antlr4::Token> Python3LexerBase::nextToken() {
     );
 
     // // First emit an extra line break that serves as the end of the statement.
-    emit(commonToken(Python3Parser::NEWLINE, "\n"));
+    emitp(commonToken(Python3Parser::NEWLINE, "\n"));
 
     // Now emit as much DEDENT tokens as needed.
     while (!indents -> empty()) {
-      emit(createDedent());
+      emitp(createDedent());
       indents -> pop();
     }
 
     // // Put the EOF back on the token stream.
-    emit(commonToken(Python3Parser::EOF, "<EOF>"));
+    emitp(commonToken(Python3Parser::EOF, "<EOF>"));
   }
 
   auto next = antlr4::Lexer::nextToken();
@@ -65,16 +73,15 @@ std::unique_ptr<antlr4::Token> Python3LexerBase::nextToken() {
   }
 }
 
-std::unique_ptr<antlr4::CommonToken> Python3LexerBase::commonToken(size_t type, std::string text) {
+antlr4::CommonToken* Python3LexerBase::commonToken(size_t type, std::string text) {
   int stop = getCharIndex() - 1;
   int start = text.empty() ? stop : stop - text.length() + 1;
-  auto token = new antlr4::CommonToken({ this, _input }, type, antlr4::Lexer::DEFAULT_TOKEN_CHANNEL, start, stop);
-  return std::unique_ptr<antlr4::CommonToken>(token);
+  return new antlr4::CommonToken({ this, _input }, type, antlr4::Lexer::DEFAULT_TOKEN_CHANNEL, start, stop);
 }
 
-std::unique_ptr<antlr4::CommonToken> Python3LexerBase::createDedent() {
+antlr4::CommonToken* Python3LexerBase::createDedent() {
   auto dedent = commonToken(Python3Parser::DEDENT, "");
-  dedent.get() -> setLine(lastToken -> getLine());
+  dedent -> setLine(lastToken -> getLine());
   return dedent;
 }
 

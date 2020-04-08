@@ -10,6 +10,8 @@ public:
   Python3LexerBase(antlr4::CharStream *input);
   ~Python3LexerBase();
 
+  virtual void emitp(antlr4::Token* newToken);
+
   virtual void emit(std::unique_ptr<antlr4::Token> newToken) override;
   virtual std::unique_ptr<antlr4::Token> nextToken() override;
 
@@ -18,8 +20,8 @@ public:
   static int getIndentationCount(std::string spaces);
 
 protected:
-  std::unique_ptr<antlr4::CommonToken> commonToken(size_t type, std::string text);
-  std::unique_ptr<antlr4::CommonToken> createDedent();
+  antlr4::CommonToken* commonToken(size_t type, std::string text);
+  antlr4::CommonToken* createDedent();
 
   // A queue where extra tokens are pushed on (see the NEWLINE lexer rule).
   std::list<antlr4::Token*>* tokens;

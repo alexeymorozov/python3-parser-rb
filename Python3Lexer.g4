@@ -120,7 +120,7 @@ NEWLINE
           // dedents and line breaks.
           skip();
         } else {
-          emit(commonToken(Python3Parser::NEWLINE, newLine));
+          emitp(commonToken(Python3Parser::NEWLINE, newLine));
           int indent = getIndentationCount(spaces);
           int previous = indents -> empty() ? 0 : indents -> top();
           if (indent == previous) {
@@ -128,11 +128,11 @@ NEWLINE
             skip();
           } else if (indent > previous) {
             indents -> push(indent);
-            emit(commonToken(Python3Parser::INDENT, spaces));
+            emitp(commonToken(Python3Parser::INDENT, spaces));
           } else {
             // Possibly emit more than 1 DEDENT token.
             while(!indents -> empty() && indents -> top() > indent) {
-              emit(createDedent());
+              emitp(createDedent());
               indents -> pop();
             }
           }
