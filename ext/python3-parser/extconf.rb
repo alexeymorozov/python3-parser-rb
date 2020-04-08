@@ -26,7 +26,7 @@ include_paths.each do |include_path|
   $INCFLAGS << " -I$(srcdir)/#{include_path}"
   $VPATH << "$(srcdir)/#{include_path}"
 
-  Dir.chdir('ext/python3-parser') do
+  Dir.chdir(File.expand_path('.', __dir__)) do
     Dir.glob("#{include_path}/*.cpp").each do |path|
       $srcs << path
     end
