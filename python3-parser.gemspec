@@ -15,6 +15,8 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'rice', '~> 2.0'
 
+  s.extensions = File.join(*%w(ext python3-parser extconf.rb))
+
   s.require_path = 'lib'
   s.files = Dir[
     '{lib,spec}/**/*',
