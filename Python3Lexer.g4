@@ -112,10 +112,10 @@ NEWLINE
 
         // Strip newlines inside open clauses except if we are near EOF. We keep NEWLINEs near EOF to
         // satisfy the final newline needed by the single_put rule used by the REPL.
-        int next = _input -> LA(1);
-        int nextnext = _input -> LA(2);
+        size_t next = _input -> LA(1);
+        size_t nextnext = _input -> LA(2);
 
-        if (opened > 0 || (nextnext != -1 && (next == '\r' || next == '\n' || next == '\f' || next == '#'))) {
+        if (opened > 0 || (nextnext != -1ul && (next == '\r' || next == '\n' || next == '\f' || next == '#'))) {
           // If we're inside a list or on a blank line, ignore all indents,
           // dedents and line breaks.
           skip();
