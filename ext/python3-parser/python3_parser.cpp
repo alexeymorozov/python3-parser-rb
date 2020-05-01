@@ -1,4 +1,5 @@
-#include "iostream"
+#include <iostream>
+#include <mutex>
 
 #include "antlr4-runtime.h"
 
@@ -15,6 +16,98 @@ using namespace std;
 using namespace Rice;
 using namespace antlr4;
 
+Class rb_cSingle_inputContext;
+Class rb_cSimple_stmtContext;
+Class rb_cCompound_stmtContext;
+Class rb_cFile_inputContext;
+Class rb_cStmtContext;
+Class rb_cEval_inputContext;
+Class rb_cTestlistContext;
+Class rb_cDecoratorContext;
+Class rb_cDotted_nameContext;
+Class rb_cArglistContext;
+Class rb_cDecoratorsContext;
+Class rb_cDecoratedContext;
+Class rb_cClassdefContext;
+Class rb_cFuncdefContext;
+Class rb_cAsync_funcdefContext;
+Class rb_cParametersContext;
+Class rb_cSuiteContext;
+Class rb_cTestContext;
+Class rb_cTypedargslistContext;
+Class rb_cTfpdefContext;
+Class rb_cVarargslistContext;
+Class rb_cVfpdefContext;
+Class rb_cSmall_stmtContext;
+Class rb_cExpr_stmtContext;
+Class rb_cDel_stmtContext;
+Class rb_cPass_stmtContext;
+Class rb_cFlow_stmtContext;
+Class rb_cImport_stmtContext;
+Class rb_cGlobal_stmtContext;
+Class rb_cNonlocal_stmtContext;
+Class rb_cAssert_stmtContext;
+Class rb_cTestlist_star_exprContext;
+Class rb_cAnnassignContext;
+Class rb_cAugassignContext;
+Class rb_cYield_exprContext;
+Class rb_cStar_exprContext;
+Class rb_cExprlistContext;
+Class rb_cBreak_stmtContext;
+Class rb_cContinue_stmtContext;
+Class rb_cReturn_stmtContext;
+Class rb_cRaise_stmtContext;
+Class rb_cYield_stmtContext;
+Class rb_cImport_nameContext;
+Class rb_cImport_fromContext;
+Class rb_cDotted_as_namesContext;
+Class rb_cImport_as_namesContext;
+Class rb_cImport_as_nameContext;
+Class rb_cDotted_as_nameContext;
+Class rb_cIf_stmtContext;
+Class rb_cWhile_stmtContext;
+Class rb_cFor_stmtContext;
+Class rb_cTry_stmtContext;
+Class rb_cWith_stmtContext;
+Class rb_cAsync_stmtContext;
+Class rb_cExcept_clauseContext;
+Class rb_cWith_itemContext;
+Class rb_cExprContext;
+Class rb_cOr_testContext;
+Class rb_cLambdefContext;
+Class rb_cTest_nocondContext;
+Class rb_cLambdef_nocondContext;
+Class rb_cAnd_testContext;
+Class rb_cNot_testContext;
+Class rb_cComparisonContext;
+Class rb_cComp_opContext;
+Class rb_cXor_exprContext;
+Class rb_cAnd_exprContext;
+Class rb_cShift_exprContext;
+Class rb_cArith_exprContext;
+Class rb_cTermContext;
+Class rb_cFactorContext;
+Class rb_cPowerContext;
+Class rb_cAtom_exprContext;
+Class rb_cAtomContext;
+Class rb_cTrailerContext;
+Class rb_cTestlist_compContext;
+Class rb_cDictorsetmakerContext;
+Class rb_cComp_forContext;
+Class rb_cSubscriptlistContext;
+Class rb_cSubscriptContext;
+Class rb_cSliceopContext;
+Class rb_cArgumentContext;
+Class rb_cComp_iterContext;
+Class rb_cComp_ifContext;
+Class rb_cEncoding_declContext;
+Class rb_cYield_argContext;
+Class rb_cToken;
+Class rb_cParser;
+Class rb_cParseTree;
+Class rb_cTerminalNode;
+Class rb_cContextProxy;
+
 class ContextProxy {
 public:
   ContextProxy(tree::ParseTree* orig) {
@@ -29,24 +122,32 @@ public:
     return orig -> getText();
   }
 
-  Object getChildren() {
-    Array a;
+  Array getChildren() {
+    if (!childrenInitialized) {
+      if (orig != nullptr) {
+        for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
+          Object parseTree = ContextProxy::wrapParseTree(*it);
 
-    if (orig != nullptr) {
-      for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
-        a.push(ContextProxy::wrapParseTree(*it));
+          if (parseTree != Nil) {
+            children.push(parseTree);
+          }
+        }
+
+        childrenInitialized = true;
       }
     }
 
-    return a;
+    return children;
   }
 
   Object getParent() {
-    if (orig == nullptr) {
-      return Qnil;
+    if (parent == Nil) {
+      if (orig != nullptr) {
+        parent = ContextProxy::wrapParseTree(orig -> parent);
+      }
     }
 
-    return ContextProxy::wrapParseTree(orig -> parent);
+    return parent;
   }
 
   size_t childCount() {
@@ -54,7 +155,15 @@ public:
       return 0;
     }
 
-    return orig -> children.size();
+    return getChildren().size();
+  }
+
+  bool doubleEquals(Object other) {
+    if (other.is_a(rb_cContextProxy)) {
+      return from_ruby<ContextProxy*>(other) -> getOriginal() == getOriginal();
+    } else {
+      return false;
+    }
   }
 
 private:
@@ -63,6 +172,9 @@ private:
 
 protected:
   tree::ParseTree* orig = nullptr;
+  Array children;
+  bool childrenInitialized = false;
+  Object parent = Nil;
 };
 
 class TerminalNodeProxy : public ContextProxy {
@@ -952,98 +1064,6 @@ public:
 };
 
 
-Class rb_cSingle_inputContext;
-Class rb_cSimple_stmtContext;
-Class rb_cCompound_stmtContext;
-Class rb_cFile_inputContext;
-Class rb_cStmtContext;
-Class rb_cEval_inputContext;
-Class rb_cTestlistContext;
-Class rb_cDecoratorContext;
-Class rb_cDotted_nameContext;
-Class rb_cArglistContext;
-Class rb_cDecoratorsContext;
-Class rb_cDecoratedContext;
-Class rb_cClassdefContext;
-Class rb_cFuncdefContext;
-Class rb_cAsync_funcdefContext;
-Class rb_cParametersContext;
-Class rb_cSuiteContext;
-Class rb_cTestContext;
-Class rb_cTypedargslistContext;
-Class rb_cTfpdefContext;
-Class rb_cVarargslistContext;
-Class rb_cVfpdefContext;
-Class rb_cSmall_stmtContext;
-Class rb_cExpr_stmtContext;
-Class rb_cDel_stmtContext;
-Class rb_cPass_stmtContext;
-Class rb_cFlow_stmtContext;
-Class rb_cImport_stmtContext;
-Class rb_cGlobal_stmtContext;
-Class rb_cNonlocal_stmtContext;
-Class rb_cAssert_stmtContext;
-Class rb_cTestlist_star_exprContext;
-Class rb_cAnnassignContext;
-Class rb_cAugassignContext;
-Class rb_cYield_exprContext;
-Class rb_cStar_exprContext;
-Class rb_cExprlistContext;
-Class rb_cBreak_stmtContext;
-Class rb_cContinue_stmtContext;
-Class rb_cReturn_stmtContext;
-Class rb_cRaise_stmtContext;
-Class rb_cYield_stmtContext;
-Class rb_cImport_nameContext;
-Class rb_cImport_fromContext;
-Class rb_cDotted_as_namesContext;
-Class rb_cImport_as_namesContext;
-Class rb_cImport_as_nameContext;
-Class rb_cDotted_as_nameContext;
-Class rb_cIf_stmtContext;
-Class rb_cWhile_stmtContext;
-Class rb_cFor_stmtContext;
-Class rb_cTry_stmtContext;
-Class rb_cWith_stmtContext;
-Class rb_cAsync_stmtContext;
-Class rb_cExcept_clauseContext;
-Class rb_cWith_itemContext;
-Class rb_cExprContext;
-Class rb_cOr_testContext;
-Class rb_cLambdefContext;
-Class rb_cTest_nocondContext;
-Class rb_cLambdef_nocondContext;
-Class rb_cAnd_testContext;
-Class rb_cNot_testContext;
-Class rb_cComparisonContext;
-Class rb_cComp_opContext;
-Class rb_cXor_exprContext;
-Class rb_cAnd_exprContext;
-Class rb_cShift_exprContext;
-Class rb_cArith_exprContext;
-Class rb_cTermContext;
-Class rb_cFactorContext;
-Class rb_cPowerContext;
-Class rb_cAtom_exprContext;
-Class rb_cAtomContext;
-Class rb_cTrailerContext;
-Class rb_cTestlist_compContext;
-Class rb_cDictorsetmakerContext;
-Class rb_cComp_forContext;
-Class rb_cSubscriptlistContext;
-Class rb_cSubscriptContext;
-Class rb_cSliceopContext;
-Class rb_cArgumentContext;
-Class rb_cComp_iterContext;
-Class rb_cComp_ifContext;
-Class rb_cEncoding_declContext;
-Class rb_cYield_argContext;
-Class rb_cToken;
-Class rb_cParser;
-Class rb_cParseTree;
-Class rb_cTerminalNode;
-Class rb_cTerminalNodeImpl;
-
 template <>
 Object to_ruby<Token*>(Token* const &x) {
   if (!x) return Nil;
@@ -1060,6 +1080,12 @@ template <>
 Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
   if (!x) return Nil;
   return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
+}
+
+template <>
+Object to_ruby<ContextProxy*>(ContextProxy* const &x) {
+  if (!x) return Nil;
+  return Data_Object<ContextProxy>(x, rb_cContextProxy, nullptr, nullptr);
 }
 
 template <>
@@ -2107,8 +2133,13 @@ Object Single_inputContextProxy::simple_stmt() {
     return Qnil;
   }
 
-  Simple_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Single_inputContextProxy::compound_stmt() {
@@ -2122,8 +2153,13 @@ Object Single_inputContextProxy::compound_stmt() {
     return Qnil;
   }
 
-  Compound_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Single_inputContextProxy::NEWLINE() {
@@ -2161,8 +2197,13 @@ Object Simple_stmtContextProxy::small_stmtAt(size_t i) {
     return Qnil;
   }
 
-  Small_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Simple_stmtContextProxy::NEWLINE() {
@@ -2213,8 +2254,13 @@ Object Compound_stmtContextProxy::if_stmt() {
     return Qnil;
   }
 
-  If_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::while_stmt() {
@@ -2228,8 +2274,13 @@ Object Compound_stmtContextProxy::while_stmt() {
     return Qnil;
   }
 
-  While_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::for_stmt() {
@@ -2243,8 +2294,13 @@ Object Compound_stmtContextProxy::for_stmt() {
     return Qnil;
   }
 
-  For_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::try_stmt() {
@@ -2258,8 +2314,13 @@ Object Compound_stmtContextProxy::try_stmt() {
     return Qnil;
   }
 
-  Try_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::with_stmt() {
@@ -2273,8 +2334,13 @@ Object Compound_stmtContextProxy::with_stmt() {
     return Qnil;
   }
 
-  With_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::funcdef() {
@@ -2288,8 +2354,13 @@ Object Compound_stmtContextProxy::funcdef() {
     return Qnil;
   }
 
-  FuncdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::classdef() {
@@ -2303,8 +2374,13 @@ Object Compound_stmtContextProxy::classdef() {
     return Qnil;
   }
 
-  ClassdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::decorated() {
@@ -2318,8 +2394,13 @@ Object Compound_stmtContextProxy::decorated() {
     return Qnil;
   }
 
-  DecoratedContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Compound_stmtContextProxy::async_stmt() {
@@ -2333,8 +2414,13 @@ Object Compound_stmtContextProxy::async_stmt() {
     return Qnil;
   }
 
-  Async_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object File_inputContextProxy::stmt() {
@@ -2362,8 +2448,13 @@ Object File_inputContextProxy::stmtAt(size_t i) {
     return Qnil;
   }
 
-  StmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object File_inputContextProxy::EOF() {
@@ -2414,8 +2505,13 @@ Object StmtContextProxy::simple_stmt() {
     return Qnil;
   }
 
-  Simple_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object StmtContextProxy::compound_stmt() {
@@ -2429,8 +2525,13 @@ Object StmtContextProxy::compound_stmt() {
     return Qnil;
   }
 
-  Compound_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Eval_inputContextProxy::testlist() {
@@ -2444,8 +2545,13 @@ Object Eval_inputContextProxy::testlist() {
     return Qnil;
   }
 
-  TestlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Eval_inputContextProxy::EOF() {
@@ -2510,8 +2616,13 @@ Object TestlistContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TestlistContextProxy::COMMA() {
@@ -2552,8 +2663,13 @@ Object DecoratorContextProxy::dotted_name() {
     return Qnil;
   }
 
-  Dotted_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratorContextProxy::arglist() {
@@ -2567,8 +2683,13 @@ Object DecoratorContextProxy::arglist() {
     return Qnil;
   }
 
-  ArglistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratorContextProxy::AT() {
@@ -2690,8 +2811,13 @@ Object ArglistContextProxy::argumentAt(size_t i) {
     return Qnil;
   }
 
-  ArgumentContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ArglistContextProxy::COMMA() {
@@ -2746,8 +2872,13 @@ Object DecoratorsContextProxy::decoratorAt(size_t i) {
     return Qnil;
   }
 
-  DecoratorContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratedContextProxy::decorators() {
@@ -2761,8 +2892,13 @@ Object DecoratedContextProxy::decorators() {
     return Qnil;
   }
 
-  DecoratorsContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratedContextProxy::classdef() {
@@ -2776,8 +2912,13 @@ Object DecoratedContextProxy::classdef() {
     return Qnil;
   }
 
-  ClassdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratedContextProxy::funcdef() {
@@ -2791,8 +2932,13 @@ Object DecoratedContextProxy::funcdef() {
     return Qnil;
   }
 
-  FuncdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DecoratedContextProxy::async_funcdef() {
@@ -2806,8 +2952,13 @@ Object DecoratedContextProxy::async_funcdef() {
     return Qnil;
   }
 
-  Async_funcdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ClassdefContextProxy::suite() {
@@ -2821,8 +2972,13 @@ Object ClassdefContextProxy::suite() {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ClassdefContextProxy::arglist() {
@@ -2836,8 +2992,13 @@ Object ClassdefContextProxy::arglist() {
     return Qnil;
   }
 
-  ArglistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ClassdefContextProxy::CLASS() {
@@ -2901,8 +3062,13 @@ Object FuncdefContextProxy::parameters() {
     return Qnil;
   }
 
-  ParametersContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object FuncdefContextProxy::suite() {
@@ -2916,8 +3082,13 @@ Object FuncdefContextProxy::suite() {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object FuncdefContextProxy::test() {
@@ -2931,8 +3102,13 @@ Object FuncdefContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object FuncdefContextProxy::DEF() {
@@ -2986,8 +3162,13 @@ Object Async_funcdefContextProxy::funcdef() {
     return Qnil;
   }
 
-  FuncdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Async_funcdefContextProxy::ASYNC() {
@@ -3011,8 +3192,13 @@ Object ParametersContextProxy::typedargslist() {
     return Qnil;
   }
 
-  TypedargslistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ParametersContextProxy::OPEN_PAREN() {
@@ -3046,8 +3232,13 @@ Object SuiteContextProxy::simple_stmt() {
     return Qnil;
   }
 
-  Simple_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SuiteContextProxy::stmt() {
@@ -3075,8 +3266,13 @@ Object SuiteContextProxy::stmtAt(size_t i) {
     return Qnil;
   }
 
-  StmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SuiteContextProxy::NEWLINE() {
@@ -3134,8 +3330,13 @@ Object TestContextProxy::or_testAt(size_t i) {
     return Qnil;
   }
 
-  Or_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TestContextProxy::test() {
@@ -3149,8 +3350,13 @@ Object TestContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TestContextProxy::lambdef() {
@@ -3164,8 +3370,13 @@ Object TestContextProxy::lambdef() {
     return Qnil;
   }
 
-  LambdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TestContextProxy::IF() {
@@ -3213,8 +3424,13 @@ Object TypedargslistContextProxy::tfpdefAt(size_t i) {
     return Qnil;
   }
 
-  TfpdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TypedargslistContextProxy::test() {
@@ -3242,8 +3458,13 @@ Object TypedargslistContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TypedargslistContextProxy::STAR() {
@@ -3331,8 +3552,13 @@ Object TfpdefContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TfpdefContextProxy::NAME() {
@@ -3380,8 +3606,13 @@ Object VarargslistContextProxy::vfpdefAt(size_t i) {
     return Qnil;
   }
 
-  VfpdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object VarargslistContextProxy::test() {
@@ -3409,8 +3640,13 @@ Object VarargslistContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object VarargslistContextProxy::STAR() {
@@ -3508,8 +3744,13 @@ Object Small_stmtContextProxy::expr_stmt() {
     return Qnil;
   }
 
-  Expr_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::del_stmt() {
@@ -3523,8 +3764,13 @@ Object Small_stmtContextProxy::del_stmt() {
     return Qnil;
   }
 
-  Del_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::pass_stmt() {
@@ -3538,8 +3784,13 @@ Object Small_stmtContextProxy::pass_stmt() {
     return Qnil;
   }
 
-  Pass_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::flow_stmt() {
@@ -3553,8 +3804,13 @@ Object Small_stmtContextProxy::flow_stmt() {
     return Qnil;
   }
 
-  Flow_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::import_stmt() {
@@ -3568,8 +3824,13 @@ Object Small_stmtContextProxy::import_stmt() {
     return Qnil;
   }
 
-  Import_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::global_stmt() {
@@ -3583,8 +3844,13 @@ Object Small_stmtContextProxy::global_stmt() {
     return Qnil;
   }
 
-  Global_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::nonlocal_stmt() {
@@ -3598,8 +3864,13 @@ Object Small_stmtContextProxy::nonlocal_stmt() {
     return Qnil;
   }
 
-  Nonlocal_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Small_stmtContextProxy::assert_stmt() {
@@ -3613,8 +3884,13 @@ Object Small_stmtContextProxy::assert_stmt() {
     return Qnil;
   }
 
-  Assert_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::testlist_star_expr() {
@@ -3642,8 +3918,13 @@ Object Expr_stmtContextProxy::testlist_star_exprAt(size_t i) {
     return Qnil;
   }
 
-  Testlist_star_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::annassign() {
@@ -3657,8 +3938,13 @@ Object Expr_stmtContextProxy::annassign() {
     return Qnil;
   }
 
-  AnnassignContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::augassign() {
@@ -3672,8 +3958,13 @@ Object Expr_stmtContextProxy::augassign() {
     return Qnil;
   }
 
-  AugassignContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::yield_expr() {
@@ -3701,8 +3992,13 @@ Object Expr_stmtContextProxy::yield_exprAt(size_t i) {
     return Qnil;
   }
 
-  Yield_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::testlist() {
@@ -3716,8 +4012,13 @@ Object Expr_stmtContextProxy::testlist() {
     return Qnil;
   }
 
-  TestlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Expr_stmtContextProxy::ASSIGN() {
@@ -3758,8 +4059,13 @@ Object Del_stmtContextProxy::exprlist() {
     return Qnil;
   }
 
-  ExprlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Del_stmtContextProxy::DEL() {
@@ -3793,8 +4099,13 @@ Object Flow_stmtContextProxy::break_stmt() {
     return Qnil;
   }
 
-  Break_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Flow_stmtContextProxy::continue_stmt() {
@@ -3808,8 +4119,13 @@ Object Flow_stmtContextProxy::continue_stmt() {
     return Qnil;
   }
 
-  Continue_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Flow_stmtContextProxy::return_stmt() {
@@ -3823,8 +4139,13 @@ Object Flow_stmtContextProxy::return_stmt() {
     return Qnil;
   }
 
-  Return_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Flow_stmtContextProxy::raise_stmt() {
@@ -3838,8 +4159,13 @@ Object Flow_stmtContextProxy::raise_stmt() {
     return Qnil;
   }
 
-  Raise_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Flow_stmtContextProxy::yield_stmt() {
@@ -3853,8 +4179,13 @@ Object Flow_stmtContextProxy::yield_stmt() {
     return Qnil;
   }
 
-  Yield_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_stmtContextProxy::import_name() {
@@ -3868,8 +4199,13 @@ Object Import_stmtContextProxy::import_name() {
     return Qnil;
   }
 
-  Import_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_stmtContextProxy::import_from() {
@@ -3883,8 +4219,13 @@ Object Import_stmtContextProxy::import_from() {
     return Qnil;
   }
 
-  Import_fromContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Global_stmtContextProxy::GLOBAL() {
@@ -4040,8 +4381,13 @@ Object Assert_stmtContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Assert_stmtContextProxy::ASSERT() {
@@ -4089,8 +4435,13 @@ Object Testlist_star_exprContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Testlist_star_exprContextProxy::star_expr() {
@@ -4118,8 +4469,13 @@ Object Testlist_star_exprContextProxy::star_exprAt(size_t i) {
     return Qnil;
   }
 
-  Star_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Testlist_star_exprContextProxy::COMMA() {
@@ -4174,8 +4530,13 @@ Object AnnassignContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object AnnassignContextProxy::COLON() {
@@ -4339,8 +4700,13 @@ Object Yield_exprContextProxy::yield_arg() {
     return Qnil;
   }
 
-  Yield_argContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Yield_exprContextProxy::YIELD() {
@@ -4364,8 +4730,13 @@ Object Star_exprContextProxy::expr() {
     return Qnil;
   }
 
-  ExprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Star_exprContextProxy::STAR() {
@@ -4403,8 +4774,13 @@ Object ExprlistContextProxy::exprAt(size_t i) {
     return Qnil;
   }
 
-  ExprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ExprlistContextProxy::star_expr() {
@@ -4432,8 +4808,13 @@ Object ExprlistContextProxy::star_exprAt(size_t i) {
     return Qnil;
   }
 
-  Star_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ExprlistContextProxy::COMMA() {
@@ -4494,8 +4875,13 @@ Object Return_stmtContextProxy::testlist() {
     return Qnil;
   }
 
-  TestlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Return_stmtContextProxy::RETURN() {
@@ -4533,8 +4919,13 @@ Object Raise_stmtContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Raise_stmtContextProxy::RAISE() {
@@ -4568,8 +4959,13 @@ Object Yield_stmtContextProxy::yield_expr() {
     return Qnil;
   }
 
-  Yield_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_nameContextProxy::dotted_as_names() {
@@ -4583,8 +4979,13 @@ Object Import_nameContextProxy::dotted_as_names() {
     return Qnil;
   }
 
-  Dotted_as_namesContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_nameContextProxy::IMPORT() {
@@ -4608,8 +5009,13 @@ Object Import_fromContextProxy::dotted_name() {
     return Qnil;
   }
 
-  Dotted_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_fromContextProxy::import_as_names() {
@@ -4623,8 +5029,13 @@ Object Import_fromContextProxy::import_as_names() {
     return Qnil;
   }
 
-  Import_as_namesContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_fromContextProxy::FROM() {
@@ -4756,8 +5167,13 @@ Object Dotted_as_namesContextProxy::dotted_as_nameAt(size_t i) {
     return Qnil;
   }
 
-  Dotted_as_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Dotted_as_namesContextProxy::COMMA() {
@@ -4812,8 +5228,13 @@ Object Import_as_namesContextProxy::import_as_nameAt(size_t i) {
     return Qnil;
   }
 
-  Import_as_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Import_as_namesContextProxy::COMMA() {
@@ -4891,8 +5312,13 @@ Object Dotted_as_nameContextProxy::dotted_name() {
     return Qnil;
   }
 
-  Dotted_nameContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Dotted_as_nameContextProxy::AS() {
@@ -4940,8 +5366,13 @@ Object If_stmtContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object If_stmtContextProxy::suite() {
@@ -4969,8 +5400,13 @@ Object If_stmtContextProxy::suiteAt(size_t i) {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object If_stmtContextProxy::IF() {
@@ -5058,8 +5494,13 @@ Object While_stmtContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object While_stmtContextProxy::suite() {
@@ -5087,8 +5528,13 @@ Object While_stmtContextProxy::suiteAt(size_t i) {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object While_stmtContextProxy::WHILE() {
@@ -5149,8 +5595,13 @@ Object For_stmtContextProxy::exprlist() {
     return Qnil;
   }
 
-  ExprlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object For_stmtContextProxy::testlist() {
@@ -5164,8 +5615,13 @@ Object For_stmtContextProxy::testlist() {
     return Qnil;
   }
 
-  TestlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object For_stmtContextProxy::suite() {
@@ -5193,8 +5649,13 @@ Object For_stmtContextProxy::suiteAt(size_t i) {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object For_stmtContextProxy::FOR() {
@@ -5279,8 +5740,13 @@ Object Try_stmtContextProxy::suiteAt(size_t i) {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Try_stmtContextProxy::except_clause() {
@@ -5308,8 +5774,13 @@ Object Try_stmtContextProxy::except_clauseAt(size_t i) {
     return Qnil;
   }
 
-  Except_clauseContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Try_stmtContextProxy::TRY() {
@@ -5394,8 +5865,13 @@ Object With_stmtContextProxy::with_itemAt(size_t i) {
     return Qnil;
   }
 
-  With_itemContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object With_stmtContextProxy::suite() {
@@ -5409,8 +5885,13 @@ Object With_stmtContextProxy::suite() {
     return Qnil;
   }
 
-  SuiteContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object With_stmtContextProxy::WITH() {
@@ -5471,8 +5952,13 @@ Object Async_stmtContextProxy::funcdef() {
     return Qnil;
   }
 
-  FuncdefContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Async_stmtContextProxy::with_stmt() {
@@ -5486,8 +5972,13 @@ Object Async_stmtContextProxy::with_stmt() {
     return Qnil;
   }
 
-  With_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Async_stmtContextProxy::for_stmt() {
@@ -5501,8 +5992,13 @@ Object Async_stmtContextProxy::for_stmt() {
     return Qnil;
   }
 
-  For_stmtContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Async_stmtContextProxy::ASYNC() {
@@ -5526,8 +6022,13 @@ Object Except_clauseContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Except_clauseContextProxy::EXCEPT() {
@@ -5571,8 +6072,13 @@ Object With_itemContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object With_itemContextProxy::expr() {
@@ -5586,8 +6092,13 @@ Object With_itemContextProxy::expr() {
     return Qnil;
   }
 
-  ExprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object With_itemContextProxy::AS() {
@@ -5625,8 +6136,13 @@ Object ExprContextProxy::xor_exprAt(size_t i) {
     return Qnil;
   }
 
-  Xor_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ExprContextProxy::OR_OP() {
@@ -5681,8 +6197,13 @@ Object Or_testContextProxy::and_testAt(size_t i) {
     return Qnil;
   }
 
-  And_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Or_testContextProxy::OR() {
@@ -5723,8 +6244,13 @@ Object LambdefContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object LambdefContextProxy::varargslist() {
@@ -5738,8 +6264,13 @@ Object LambdefContextProxy::varargslist() {
     return Qnil;
   }
 
-  VarargslistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object LambdefContextProxy::LAMBDA() {
@@ -5773,8 +6304,13 @@ Object Test_nocondContextProxy::or_test() {
     return Qnil;
   }
 
-  Or_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Test_nocondContextProxy::lambdef_nocond() {
@@ -5788,8 +6324,13 @@ Object Test_nocondContextProxy::lambdef_nocond() {
     return Qnil;
   }
 
-  Lambdef_nocondContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Lambdef_nocondContextProxy::test_nocond() {
@@ -5803,8 +6344,13 @@ Object Lambdef_nocondContextProxy::test_nocond() {
     return Qnil;
   }
 
-  Test_nocondContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Lambdef_nocondContextProxy::varargslist() {
@@ -5818,8 +6364,13 @@ Object Lambdef_nocondContextProxy::varargslist() {
     return Qnil;
   }
 
-  VarargslistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Lambdef_nocondContextProxy::LAMBDA() {
@@ -5867,8 +6418,13 @@ Object And_testContextProxy::not_testAt(size_t i) {
     return Qnil;
   }
 
-  Not_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object And_testContextProxy::AND() {
@@ -5909,8 +6465,13 @@ Object Not_testContextProxy::not_test() {
     return Qnil;
   }
 
-  Not_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Not_testContextProxy::comparison() {
@@ -5924,8 +6485,13 @@ Object Not_testContextProxy::comparison() {
     return Qnil;
   }
 
-  ComparisonContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Not_testContextProxy::NOT() {
@@ -5963,8 +6529,13 @@ Object ComparisonContextProxy::exprAt(size_t i) {
     return Qnil;
   }
 
-  ExprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ComparisonContextProxy::comp_op() {
@@ -5992,8 +6563,13 @@ Object ComparisonContextProxy::comp_opAt(size_t i) {
     return Qnil;
   }
 
-  Comp_opContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_opContextProxy::LESS_THAN() {
@@ -6121,8 +6697,13 @@ Object Xor_exprContextProxy::and_exprAt(size_t i) {
     return Qnil;
   }
 
-  And_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Xor_exprContextProxy::XOR() {
@@ -6177,8 +6758,13 @@ Object And_exprContextProxy::shift_exprAt(size_t i) {
     return Qnil;
   }
 
-  Shift_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object And_exprContextProxy::AND_OP() {
@@ -6233,8 +6819,13 @@ Object Shift_exprContextProxy::arith_exprAt(size_t i) {
     return Qnil;
   }
 
-  Arith_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Shift_exprContextProxy::LEFT_SHIFT() {
@@ -6316,8 +6907,13 @@ Object Arith_exprContextProxy::termAt(size_t i) {
     return Qnil;
   }
 
-  TermContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Arith_exprContextProxy::ADD() {
@@ -6399,8 +6995,13 @@ Object TermContextProxy::factorAt(size_t i) {
     return Qnil;
   }
 
-  FactorContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TermContextProxy::STAR() {
@@ -6549,8 +7150,13 @@ Object FactorContextProxy::factor() {
     return Qnil;
   }
 
-  FactorContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object FactorContextProxy::power() {
@@ -6564,8 +7170,13 @@ Object FactorContextProxy::power() {
     return Qnil;
   }
 
-  PowerContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object FactorContextProxy::ADD() {
@@ -6609,8 +7220,13 @@ Object PowerContextProxy::atom_expr() {
     return Qnil;
   }
 
-  Atom_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object PowerContextProxy::factor() {
@@ -6624,8 +7240,13 @@ Object PowerContextProxy::factor() {
     return Qnil;
   }
 
-  FactorContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object PowerContextProxy::POWER() {
@@ -6649,8 +7270,13 @@ Object Atom_exprContextProxy::atom() {
     return Qnil;
   }
 
-  AtomContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Atom_exprContextProxy::trailer() {
@@ -6678,8 +7304,13 @@ Object Atom_exprContextProxy::trailerAt(size_t i) {
     return Qnil;
   }
 
-  TrailerContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Atom_exprContextProxy::AWAIT() {
@@ -6703,8 +7334,13 @@ Object AtomContextProxy::yield_expr() {
     return Qnil;
   }
 
-  Yield_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object AtomContextProxy::testlist_comp() {
@@ -6718,8 +7354,13 @@ Object AtomContextProxy::testlist_comp() {
     return Qnil;
   }
 
-  Testlist_compContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object AtomContextProxy::dictorsetmaker() {
@@ -6733,8 +7374,13 @@ Object AtomContextProxy::dictorsetmaker() {
     return Qnil;
   }
 
-  DictorsetmakerContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object AtomContextProxy::OPEN_PAREN() {
@@ -6895,8 +7541,13 @@ Object TrailerContextProxy::arglist() {
     return Qnil;
   }
 
-  ArglistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TrailerContextProxy::subscriptlist() {
@@ -6910,8 +7561,13 @@ Object TrailerContextProxy::subscriptlist() {
     return Qnil;
   }
 
-  SubscriptlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object TrailerContextProxy::OPEN_PAREN() {
@@ -6999,8 +7655,13 @@ Object Testlist_compContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Testlist_compContextProxy::star_expr() {
@@ -7028,8 +7689,13 @@ Object Testlist_compContextProxy::star_exprAt(size_t i) {
     return Qnil;
   }
 
-  Star_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Testlist_compContextProxy::comp_for() {
@@ -7043,8 +7709,13 @@ Object Testlist_compContextProxy::comp_for() {
     return Qnil;
   }
 
-  Comp_forContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Testlist_compContextProxy::COMMA() {
@@ -7099,8 +7770,13 @@ Object DictorsetmakerContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DictorsetmakerContextProxy::expr() {
@@ -7128,8 +7804,13 @@ Object DictorsetmakerContextProxy::exprAt(size_t i) {
     return Qnil;
   }
 
-  ExprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DictorsetmakerContextProxy::comp_for() {
@@ -7143,8 +7824,13 @@ Object DictorsetmakerContextProxy::comp_for() {
     return Qnil;
   }
 
-  Comp_forContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DictorsetmakerContextProxy::star_expr() {
@@ -7172,8 +7858,13 @@ Object DictorsetmakerContextProxy::star_exprAt(size_t i) {
     return Qnil;
   }
 
-  Star_exprContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object DictorsetmakerContextProxy::COLON() {
@@ -7268,8 +7959,13 @@ Object Comp_forContextProxy::exprlist() {
     return Qnil;
   }
 
-  ExprlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_forContextProxy::or_test() {
@@ -7283,8 +7979,13 @@ Object Comp_forContextProxy::or_test() {
     return Qnil;
   }
 
-  Or_testContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_forContextProxy::comp_iter() {
@@ -7298,8 +7999,13 @@ Object Comp_forContextProxy::comp_iter() {
     return Qnil;
   }
 
-  Comp_iterContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_forContextProxy::FOR() {
@@ -7357,8 +8063,13 @@ Object SubscriptlistContextProxy::subscriptAt(size_t i) {
     return Qnil;
   }
 
-  SubscriptContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SubscriptlistContextProxy::COMMA() {
@@ -7413,8 +8124,13 @@ Object SubscriptContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SubscriptContextProxy::sliceop() {
@@ -7428,8 +8144,13 @@ Object SubscriptContextProxy::sliceop() {
     return Qnil;
   }
 
-  SliceopContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SubscriptContextProxy::COLON() {
@@ -7453,8 +8174,13 @@ Object SliceopContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object SliceopContextProxy::COLON() {
@@ -7492,8 +8218,13 @@ Object ArgumentContextProxy::testAt(size_t i) {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ArgumentContextProxy::comp_for() {
@@ -7507,8 +8238,13 @@ Object ArgumentContextProxy::comp_for() {
     return Qnil;
   }
 
-  Comp_forContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object ArgumentContextProxy::ASSIGN() {
@@ -7552,8 +8288,13 @@ Object Comp_iterContextProxy::comp_for() {
     return Qnil;
   }
 
-  Comp_forContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_iterContextProxy::comp_if() {
@@ -7567,8 +8308,13 @@ Object Comp_iterContextProxy::comp_if() {
     return Qnil;
   }
 
-  Comp_ifContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_ifContextProxy::test_nocond() {
@@ -7582,8 +8328,13 @@ Object Comp_ifContextProxy::test_nocond() {
     return Qnil;
   }
 
-  Test_nocondContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_ifContextProxy::comp_iter() {
@@ -7597,8 +8348,13 @@ Object Comp_ifContextProxy::comp_iter() {
     return Qnil;
   }
 
-  Comp_iterContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Comp_ifContextProxy::IF() {
@@ -7632,8 +8388,13 @@ Object Yield_argContextProxy::test() {
     return Qnil;
   }
 
-  TestContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Yield_argContextProxy::testlist() {
@@ -7647,8 +8408,13 @@ Object Yield_argContextProxy::testlist() {
     return Qnil;
   }
 
-  TestlistContextProxy proxy(ctx);
-  return to_ruby(proxy);
+  for (auto child : getChildren()) {
+    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+      return child;
+    }
+  }
+
+  return Nil;
 }
 
 Object Yield_argContextProxy::FROM() {
@@ -8128,14 +8894,14 @@ public:
     return parser;
   }
 
-  VALUE visit(VisitorProxy* visitor) {
+  Object visit(VisitorProxy* visitor) {
     visitor -> visit(this -> parser -> file_input());
 
     // reset for the next visit call
     this -> lexer -> reset();
     this -> parser -> reset();
 
-    return Qnil;
+    return Nil;
   }
 
   ~ParserProxy() {
@@ -8520,6 +9286,8 @@ Object ContextProxy::wrapParseTree(tree::ParseTree* node) {
   else if (antlrcpp::is<tree::TerminalNodeImpl*>(node)) {
     TerminalNodeProxy proxy(node);
     return to_ruby(proxy);
+  } else {
+    return Nil;
   }
 }
 
@@ -8541,12 +9309,13 @@ void Init_python3_parser() {
   rb_cParseTree = rb_mPython3Parser
     .define_class<tree::ParseTree>("ParseTree");
 
-  rb_mPython3Parser
+  rb_cContextProxy = rb_mPython3Parser
     .define_class<ContextProxy>("Context")
     .define_method("children", &ContextProxy::getChildren)
     .define_method("child_count", &ContextProxy::childCount)
     .define_method("text", &ContextProxy::getText)
-    .define_method("parent", &ContextProxy::getParent);
+    .define_method("parent", &ContextProxy::getParent)
+    .define_method("==", &ContextProxy::doubleEquals);
 
   rb_cTerminalNode = rb_mPython3Parser
     .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
