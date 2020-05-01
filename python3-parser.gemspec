@@ -20,8 +20,8 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.files = Dir[
     '{lib,spec}/**/*',
-    'ext/python3-parser/{extconf.rb,python3_parser.cpp}',
-    'ext/python3-parser/antlrgen/**/*',
+    'ext/python3-parser/*.{rb,cpp,h}',
+    'ext/python3-parser/antlrgen/*',
     'ext/python3-parser/antlr4-upstream/runtime/Cpp/runtime/src/**/*.{cpp,h}',
     'Gemfile',
     'README.md',

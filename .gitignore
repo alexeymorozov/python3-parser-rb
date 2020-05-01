@@ -1,8 +1,7 @@
-Makefile
 Gemfile.lock
 pkg/
 *.o
 *.o.tmp
-Makefile
-mkmf.log
 *.bundle
+ext/python3-parser/Makefile
+ext/python3-parser/mkmf.log

@@ -1,6 +1,6 @@
 require 'mkmf-rice'
 
-extension_name = 'build/python3_parser'
+extension_name = 'python3_parser'
 dir_config(extension_name)
 
 have_library('stdc++')
@@ -23,8 +23,8 @@ include_paths = [
 $srcs = []
 
 include_paths.each do |include_path|
-  $INCFLAGS << " -I$(srcdir)/#{include_path}"
-  $VPATH << "$(srcdir)/#{include_path}"
+  $INCFLAGS << " -I#{include_path}"
+  $VPATH << include_path
 
   Dir.chdir(File.expand_path('.', __dir__)) do
     Dir.glob("#{include_path}/*.cpp").each do |path|

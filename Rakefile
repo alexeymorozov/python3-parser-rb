@@ -12,3 +12,10 @@ task :generate do
 
   generator.generate
 end
+
+task :compile do
+  Dir.chdir(File.join(%w(ext python3-parser))) do
+    load 'extconf.rb'
+    exec 'make -j 4'
+  end
+end
