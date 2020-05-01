@@ -1,0 +1,3 @@
+[submodule "ext/python3-parser/antlr4-upstream"]
+	path = ext/python3-parser/antlr4-upstream
+	url = https://github.com/antlr/antlr4
