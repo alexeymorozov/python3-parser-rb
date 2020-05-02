@@ -38,6 +38,10 @@ parser.visit(MyFuncVisitor.new)
 
 The script above should print `"decode"` when executed, since `decode` is the only function defined in the Python code snippet.
 
+## Technology
+
+Want to target Ruby with your own ANTLR grammars? Check out the [antlr-gemerator](https://github.com/camertron/antlr-gemerator).
+
 ## Caveats
 
 See the caveats listed in [antlr4-native's README](https://github.com/camertron/antlr4-native-rb#caveats).
