@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.email    = ['camertron@gmail.com']
   s.homepage = 'http://github.com/camertron/python3-parser-rb'
 
-  s.description = s.summary = 'A Python v3 parser for Ruby.'
+  s.description = s.summary = 'A Python 3 parser for Ruby.'
 
   s.platform = Gem::Platform::RUBY
   s.has_rdoc = true
