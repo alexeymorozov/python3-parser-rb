@@ -26,10 +26,8 @@ include_paths.each do |include_path|
   $INCFLAGS << " -I#{include_path}"
   $VPATH << include_path
 
-  Dir.chdir(File.expand_path('.', __dir__)) do
-    Dir.glob("#{include_path}/*.cpp").each do |path|
-      $srcs << File.expand_path(path)
-    end
+  Dir.glob("#{include_path}/*.cpp").each do |path|
+    $srcs << File.expand_path(path)
   end
 end
 
