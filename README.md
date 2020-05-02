@@ -36,6 +36,8 @@ parser = Python3Parser::Parser.parse(python_code)
 parser.visit(MyFuncVisitor.new)
 ```
 
+The script above should print `"decode"` when executed, since `decode` is the only function defined in the Python code snippet.
+
 ## Caveats
 
 See the caveats listed in [antlr4-native's README](https://github.com/camertron/antlr4-native-rb#caveats).
