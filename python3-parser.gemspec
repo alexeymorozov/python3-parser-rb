@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.has_rdoc = true
 
-  s.add_dependency 'rice', '~> 2.0'
+  s.add_dependency 'rice', '~> 4.0'
 
   s.extensions = File.join(*%w(ext python3-parser extconf.rb))
 
