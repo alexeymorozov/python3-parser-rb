@@ -1,16 +1,24 @@
 #include <iostream>
-#include <mutex>
 
-#include "antlr4-runtime.h"
+#include <antlr4-runtime.h>
 
-#include "Python3Parser.h"
-#include "Python3ParserBaseVisitor.h"
-#include "Python3Lexer.h"
+#include "antlrgen/Python3Parser.h"
+#include "antlrgen/Python3ParserBaseVisitor.h"
+#include "antlrgen/Python3Lexer.h"
 
-#include "rice/Array.hpp"
-#include "rice/Class.hpp"
-#include "rice/Constructor.hpp"
-#include "rice/Director.hpp"
+#include <rice/rice.hpp>
+#include <rice/stl.hpp>
+
+#ifdef _WIN32
+#undef OPTIONAL
+#undef IN
+#undef OUT
+#endif
+
+#undef FALSE
+#undef TRUE
+
+#undef TYPE
 
 using namespace std;
 using namespace Rice;
@@ -108,6 +116,35 @@ Class rb_cParseTree;
 Class rb_cTerminalNode;
 Class rb_cContextProxy;
 
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Token*> {
+  public:
+    VALUE convert(Token* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Token>(x, false, rb_cToken);
+    }
+  };
+
+  template <>
+  class To_Ruby<tree::ParseTree*> {
+  public:
+    VALUE convert(tree::ParseTree* const &x) {
+      if (!x) return Nil;
+      return Data_Object<tree::ParseTree>(x, false, rb_cParseTree);
+    }
+  };
+
+  template <>
+  class To_Ruby<tree::TerminalNode*> {
+  public:
+    VALUE convert(tree::TerminalNode* const &x) {
+      if (!x) return Nil;
+      return Data_Object<tree::TerminalNode>(x, false, rb_cTerminalNode);
+    }
+  };
+}
+
 class ContextProxy {
 public:
   ContextProxy(tree::ParseTree* orig) {
@@ -122,22 +159,34 @@ public:
     return orig -> getText();
   }
 
+  Object getStart() {
+    auto token = ((ParserRuleContext*) orig) -> getStart();
+
+    return detail::To_Ruby<Token*>().convert(token);
+  }
+
+  Object getStop() {
+    auto token = ((ParserRuleContext*) orig) -> getStop();
+
+    return detail::To_Ruby<Token*>().convert(token);
+  }
+
   Array getChildren() {
-    if (!childrenInitialized) {
+    if (children == nullptr) {
+      children = new Array();
+
       if (orig != nullptr) {
         for (auto it = orig -> children.begin(); it != orig -> children.end(); it ++) {
           Object parseTree = ContextProxy::wrapParseTree(*it);
 
           if (parseTree != Nil) {
-            children.push(parseTree);
+            children -> push(parseTree);
           }
         }
-
-        childrenInitialized = true;
       }
     }
 
-    return children;
+    return *children;
   }
 
   Object getParent() {
@@ -160,7 +209,7 @@ public:
 
   bool doubleEquals(Object other) {
     if (other.is_a(rb_cContextProxy)) {
-      return from_ruby<ContextProxy*>(other) -> getOriginal() == getOriginal();
+      return detail::From_Ruby<ContextProxy*>().convert(other) -> getOriginal() == getOriginal();
     } else {
       return false;
     }
@@ -172,8 +221,7 @@ private:
 
 protected:
   tree::ParseTree* orig = nullptr;
-  Array children;
-  bool childrenInitialized = false;
+  Array* children = nullptr;
   Object parent = Nil;
 };
 
@@ -181,6 +229,7 @@ class TerminalNodeProxy : public ContextProxy {
 public:
   TerminalNodeProxy(tree::ParseTree* tree) : ContextProxy(tree) { }
 };
+
 
 class Single_inputContextProxy : public ContextProxy {
 public:
@@ -1064,1062 +1113,1725 @@ public:
 };
 
 
-template <>
-Object to_ruby<Token*>(Token* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Token>(x, rb_cToken, nullptr, nullptr);
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Single_inputContext*> {
+  public:
+    VALUE convert(Python3Parser::Single_inputContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Single_inputContext>(x, false, rb_cSingle_inputContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Single_inputContextProxy*> {
+  public:
+    VALUE convert(Single_inputContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Single_inputContextProxy>(x, false, rb_cSingle_inputContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Simple_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Simple_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Simple_stmtContext>(x, false, rb_cSimple_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Simple_stmtContextProxy*> {
+  public:
+    VALUE convert(Simple_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Simple_stmtContextProxy>(x, false, rb_cSimple_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Compound_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Compound_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Compound_stmtContext>(x, false, rb_cCompound_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Compound_stmtContextProxy*> {
+  public:
+    VALUE convert(Compound_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Compound_stmtContextProxy>(x, false, rb_cCompound_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::File_inputContext*> {
+  public:
+    VALUE convert(Python3Parser::File_inputContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::File_inputContext>(x, false, rb_cFile_inputContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<File_inputContextProxy*> {
+  public:
+    VALUE convert(File_inputContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<File_inputContextProxy>(x, false, rb_cFile_inputContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::StmtContext*> {
+  public:
+    VALUE convert(Python3Parser::StmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::StmtContext>(x, false, rb_cStmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<StmtContextProxy*> {
+  public:
+    VALUE convert(StmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<StmtContextProxy>(x, false, rb_cStmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Eval_inputContext*> {
+  public:
+    VALUE convert(Python3Parser::Eval_inputContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Eval_inputContext>(x, false, rb_cEval_inputContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Eval_inputContextProxy*> {
+  public:
+    VALUE convert(Eval_inputContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Eval_inputContextProxy>(x, false, rb_cEval_inputContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TestlistContext*> {
+  public:
+    VALUE convert(Python3Parser::TestlistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TestlistContext>(x, false, rb_cTestlistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TestlistContextProxy*> {
+  public:
+    VALUE convert(TestlistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TestlistContextProxy>(x, false, rb_cTestlistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::DecoratorContext*> {
+  public:
+    VALUE convert(Python3Parser::DecoratorContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::DecoratorContext>(x, false, rb_cDecoratorContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<DecoratorContextProxy*> {
+  public:
+    VALUE convert(DecoratorContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<DecoratorContextProxy>(x, false, rb_cDecoratorContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Dotted_nameContext*> {
+  public:
+    VALUE convert(Python3Parser::Dotted_nameContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Dotted_nameContext>(x, false, rb_cDotted_nameContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Dotted_nameContextProxy*> {
+  public:
+    VALUE convert(Dotted_nameContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Dotted_nameContextProxy>(x, false, rb_cDotted_nameContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ArglistContext*> {
+  public:
+    VALUE convert(Python3Parser::ArglistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ArglistContext>(x, false, rb_cArglistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ArglistContextProxy*> {
+  public:
+    VALUE convert(ArglistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ArglistContextProxy>(x, false, rb_cArglistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::DecoratorsContext*> {
+  public:
+    VALUE convert(Python3Parser::DecoratorsContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::DecoratorsContext>(x, false, rb_cDecoratorsContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<DecoratorsContextProxy*> {
+  public:
+    VALUE convert(DecoratorsContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<DecoratorsContextProxy>(x, false, rb_cDecoratorsContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::DecoratedContext*> {
+  public:
+    VALUE convert(Python3Parser::DecoratedContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::DecoratedContext>(x, false, rb_cDecoratedContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<DecoratedContextProxy*> {
+  public:
+    VALUE convert(DecoratedContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<DecoratedContextProxy>(x, false, rb_cDecoratedContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ClassdefContext*> {
+  public:
+    VALUE convert(Python3Parser::ClassdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ClassdefContext>(x, false, rb_cClassdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ClassdefContextProxy*> {
+  public:
+    VALUE convert(ClassdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ClassdefContextProxy>(x, false, rb_cClassdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::FuncdefContext*> {
+  public:
+    VALUE convert(Python3Parser::FuncdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::FuncdefContext>(x, false, rb_cFuncdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<FuncdefContextProxy*> {
+  public:
+    VALUE convert(FuncdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<FuncdefContextProxy>(x, false, rb_cFuncdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Async_funcdefContext*> {
+  public:
+    VALUE convert(Python3Parser::Async_funcdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Async_funcdefContext>(x, false, rb_cAsync_funcdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Async_funcdefContextProxy*> {
+  public:
+    VALUE convert(Async_funcdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Async_funcdefContextProxy>(x, false, rb_cAsync_funcdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ParametersContext*> {
+  public:
+    VALUE convert(Python3Parser::ParametersContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ParametersContext>(x, false, rb_cParametersContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ParametersContextProxy*> {
+  public:
+    VALUE convert(ParametersContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ParametersContextProxy>(x, false, rb_cParametersContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::SuiteContext*> {
+  public:
+    VALUE convert(Python3Parser::SuiteContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::SuiteContext>(x, false, rb_cSuiteContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<SuiteContextProxy*> {
+  public:
+    VALUE convert(SuiteContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<SuiteContextProxy>(x, false, rb_cSuiteContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TestContext*> {
+  public:
+    VALUE convert(Python3Parser::TestContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TestContext>(x, false, rb_cTestContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TestContextProxy*> {
+  public:
+    VALUE convert(TestContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TestContextProxy>(x, false, rb_cTestContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TypedargslistContext*> {
+  public:
+    VALUE convert(Python3Parser::TypedargslistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TypedargslistContext>(x, false, rb_cTypedargslistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TypedargslistContextProxy*> {
+  public:
+    VALUE convert(TypedargslistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TypedargslistContextProxy>(x, false, rb_cTypedargslistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TfpdefContext*> {
+  public:
+    VALUE convert(Python3Parser::TfpdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TfpdefContext>(x, false, rb_cTfpdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TfpdefContextProxy*> {
+  public:
+    VALUE convert(TfpdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TfpdefContextProxy>(x, false, rb_cTfpdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::VarargslistContext*> {
+  public:
+    VALUE convert(Python3Parser::VarargslistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::VarargslistContext>(x, false, rb_cVarargslistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<VarargslistContextProxy*> {
+  public:
+    VALUE convert(VarargslistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<VarargslistContextProxy>(x, false, rb_cVarargslistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::VfpdefContext*> {
+  public:
+    VALUE convert(Python3Parser::VfpdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::VfpdefContext>(x, false, rb_cVfpdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<VfpdefContextProxy*> {
+  public:
+    VALUE convert(VfpdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<VfpdefContextProxy>(x, false, rb_cVfpdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Small_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Small_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Small_stmtContext>(x, false, rb_cSmall_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Small_stmtContextProxy*> {
+  public:
+    VALUE convert(Small_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Small_stmtContextProxy>(x, false, rb_cSmall_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Expr_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Expr_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Expr_stmtContext>(x, false, rb_cExpr_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Expr_stmtContextProxy*> {
+  public:
+    VALUE convert(Expr_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Expr_stmtContextProxy>(x, false, rb_cExpr_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Del_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Del_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Del_stmtContext>(x, false, rb_cDel_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Del_stmtContextProxy*> {
+  public:
+    VALUE convert(Del_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Del_stmtContextProxy>(x, false, rb_cDel_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Pass_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Pass_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Pass_stmtContext>(x, false, rb_cPass_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Pass_stmtContextProxy*> {
+  public:
+    VALUE convert(Pass_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Pass_stmtContextProxy>(x, false, rb_cPass_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Flow_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Flow_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Flow_stmtContext>(x, false, rb_cFlow_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Flow_stmtContextProxy*> {
+  public:
+    VALUE convert(Flow_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Flow_stmtContextProxy>(x, false, rb_cFlow_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Import_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Import_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Import_stmtContext>(x, false, rb_cImport_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Import_stmtContextProxy*> {
+  public:
+    VALUE convert(Import_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Import_stmtContextProxy>(x, false, rb_cImport_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Global_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Global_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Global_stmtContext>(x, false, rb_cGlobal_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Global_stmtContextProxy*> {
+  public:
+    VALUE convert(Global_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Global_stmtContextProxy>(x, false, rb_cGlobal_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Nonlocal_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Nonlocal_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Nonlocal_stmtContext>(x, false, rb_cNonlocal_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Nonlocal_stmtContextProxy*> {
+  public:
+    VALUE convert(Nonlocal_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Nonlocal_stmtContextProxy>(x, false, rb_cNonlocal_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Assert_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Assert_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Assert_stmtContext>(x, false, rb_cAssert_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Assert_stmtContextProxy*> {
+  public:
+    VALUE convert(Assert_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Assert_stmtContextProxy>(x, false, rb_cAssert_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Testlist_star_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Testlist_star_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Testlist_star_exprContext>(x, false, rb_cTestlist_star_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Testlist_star_exprContextProxy*> {
+  public:
+    VALUE convert(Testlist_star_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Testlist_star_exprContextProxy>(x, false, rb_cTestlist_star_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::AnnassignContext*> {
+  public:
+    VALUE convert(Python3Parser::AnnassignContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::AnnassignContext>(x, false, rb_cAnnassignContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<AnnassignContextProxy*> {
+  public:
+    VALUE convert(AnnassignContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<AnnassignContextProxy>(x, false, rb_cAnnassignContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::AugassignContext*> {
+  public:
+    VALUE convert(Python3Parser::AugassignContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::AugassignContext>(x, false, rb_cAugassignContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<AugassignContextProxy*> {
+  public:
+    VALUE convert(AugassignContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<AugassignContextProxy>(x, false, rb_cAugassignContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Yield_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Yield_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Yield_exprContext>(x, false, rb_cYield_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Yield_exprContextProxy*> {
+  public:
+    VALUE convert(Yield_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Yield_exprContextProxy>(x, false, rb_cYield_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Star_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Star_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Star_exprContext>(x, false, rb_cStar_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Star_exprContextProxy*> {
+  public:
+    VALUE convert(Star_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Star_exprContextProxy>(x, false, rb_cStar_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ExprlistContext*> {
+  public:
+    VALUE convert(Python3Parser::ExprlistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ExprlistContext>(x, false, rb_cExprlistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ExprlistContextProxy*> {
+  public:
+    VALUE convert(ExprlistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ExprlistContextProxy>(x, false, rb_cExprlistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Break_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Break_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Break_stmtContext>(x, false, rb_cBreak_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Break_stmtContextProxy*> {
+  public:
+    VALUE convert(Break_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Break_stmtContextProxy>(x, false, rb_cBreak_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Continue_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Continue_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Continue_stmtContext>(x, false, rb_cContinue_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Continue_stmtContextProxy*> {
+  public:
+    VALUE convert(Continue_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Continue_stmtContextProxy>(x, false, rb_cContinue_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Return_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Return_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Return_stmtContext>(x, false, rb_cReturn_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Return_stmtContextProxy*> {
+  public:
+    VALUE convert(Return_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Return_stmtContextProxy>(x, false, rb_cReturn_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Raise_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Raise_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Raise_stmtContext>(x, false, rb_cRaise_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Raise_stmtContextProxy*> {
+  public:
+    VALUE convert(Raise_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Raise_stmtContextProxy>(x, false, rb_cRaise_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Yield_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Yield_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Yield_stmtContext>(x, false, rb_cYield_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Yield_stmtContextProxy*> {
+  public:
+    VALUE convert(Yield_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Yield_stmtContextProxy>(x, false, rb_cYield_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Import_nameContext*> {
+  public:
+    VALUE convert(Python3Parser::Import_nameContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Import_nameContext>(x, false, rb_cImport_nameContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Import_nameContextProxy*> {
+  public:
+    VALUE convert(Import_nameContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Import_nameContextProxy>(x, false, rb_cImport_nameContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Import_fromContext*> {
+  public:
+    VALUE convert(Python3Parser::Import_fromContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Import_fromContext>(x, false, rb_cImport_fromContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Import_fromContextProxy*> {
+  public:
+    VALUE convert(Import_fromContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Import_fromContextProxy>(x, false, rb_cImport_fromContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Dotted_as_namesContext*> {
+  public:
+    VALUE convert(Python3Parser::Dotted_as_namesContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Dotted_as_namesContext>(x, false, rb_cDotted_as_namesContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Dotted_as_namesContextProxy*> {
+  public:
+    VALUE convert(Dotted_as_namesContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Dotted_as_namesContextProxy>(x, false, rb_cDotted_as_namesContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Import_as_namesContext*> {
+  public:
+    VALUE convert(Python3Parser::Import_as_namesContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Import_as_namesContext>(x, false, rb_cImport_as_namesContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Import_as_namesContextProxy*> {
+  public:
+    VALUE convert(Import_as_namesContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Import_as_namesContextProxy>(x, false, rb_cImport_as_namesContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Import_as_nameContext*> {
+  public:
+    VALUE convert(Python3Parser::Import_as_nameContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Import_as_nameContext>(x, false, rb_cImport_as_nameContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Import_as_nameContextProxy*> {
+  public:
+    VALUE convert(Import_as_nameContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Import_as_nameContextProxy>(x, false, rb_cImport_as_nameContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Dotted_as_nameContext*> {
+  public:
+    VALUE convert(Python3Parser::Dotted_as_nameContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Dotted_as_nameContext>(x, false, rb_cDotted_as_nameContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Dotted_as_nameContextProxy*> {
+  public:
+    VALUE convert(Dotted_as_nameContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Dotted_as_nameContextProxy>(x, false, rb_cDotted_as_nameContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::If_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::If_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::If_stmtContext>(x, false, rb_cIf_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<If_stmtContextProxy*> {
+  public:
+    VALUE convert(If_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<If_stmtContextProxy>(x, false, rb_cIf_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::While_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::While_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::While_stmtContext>(x, false, rb_cWhile_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<While_stmtContextProxy*> {
+  public:
+    VALUE convert(While_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<While_stmtContextProxy>(x, false, rb_cWhile_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::For_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::For_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::For_stmtContext>(x, false, rb_cFor_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<For_stmtContextProxy*> {
+  public:
+    VALUE convert(For_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<For_stmtContextProxy>(x, false, rb_cFor_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Try_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Try_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Try_stmtContext>(x, false, rb_cTry_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Try_stmtContextProxy*> {
+  public:
+    VALUE convert(Try_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Try_stmtContextProxy>(x, false, rb_cTry_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::With_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::With_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::With_stmtContext>(x, false, rb_cWith_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<With_stmtContextProxy*> {
+  public:
+    VALUE convert(With_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<With_stmtContextProxy>(x, false, rb_cWith_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Async_stmtContext*> {
+  public:
+    VALUE convert(Python3Parser::Async_stmtContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Async_stmtContext>(x, false, rb_cAsync_stmtContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Async_stmtContextProxy*> {
+  public:
+    VALUE convert(Async_stmtContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Async_stmtContextProxy>(x, false, rb_cAsync_stmtContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Except_clauseContext*> {
+  public:
+    VALUE convert(Python3Parser::Except_clauseContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Except_clauseContext>(x, false, rb_cExcept_clauseContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Except_clauseContextProxy*> {
+  public:
+    VALUE convert(Except_clauseContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Except_clauseContextProxy>(x, false, rb_cExcept_clauseContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::With_itemContext*> {
+  public:
+    VALUE convert(Python3Parser::With_itemContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::With_itemContext>(x, false, rb_cWith_itemContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<With_itemContextProxy*> {
+  public:
+    VALUE convert(With_itemContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<With_itemContextProxy>(x, false, rb_cWith_itemContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ExprContext*> {
+  public:
+    VALUE convert(Python3Parser::ExprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ExprContext>(x, false, rb_cExprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ExprContextProxy*> {
+  public:
+    VALUE convert(ExprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ExprContextProxy>(x, false, rb_cExprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Or_testContext*> {
+  public:
+    VALUE convert(Python3Parser::Or_testContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Or_testContext>(x, false, rb_cOr_testContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Or_testContextProxy*> {
+  public:
+    VALUE convert(Or_testContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Or_testContextProxy>(x, false, rb_cOr_testContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::LambdefContext*> {
+  public:
+    VALUE convert(Python3Parser::LambdefContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::LambdefContext>(x, false, rb_cLambdefContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<LambdefContextProxy*> {
+  public:
+    VALUE convert(LambdefContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<LambdefContextProxy>(x, false, rb_cLambdefContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Test_nocondContext*> {
+  public:
+    VALUE convert(Python3Parser::Test_nocondContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Test_nocondContext>(x, false, rb_cTest_nocondContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Test_nocondContextProxy*> {
+  public:
+    VALUE convert(Test_nocondContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Test_nocondContextProxy>(x, false, rb_cTest_nocondContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Lambdef_nocondContext*> {
+  public:
+    VALUE convert(Python3Parser::Lambdef_nocondContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Lambdef_nocondContext>(x, false, rb_cLambdef_nocondContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Lambdef_nocondContextProxy*> {
+  public:
+    VALUE convert(Lambdef_nocondContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Lambdef_nocondContextProxy>(x, false, rb_cLambdef_nocondContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::And_testContext*> {
+  public:
+    VALUE convert(Python3Parser::And_testContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::And_testContext>(x, false, rb_cAnd_testContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<And_testContextProxy*> {
+  public:
+    VALUE convert(And_testContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<And_testContextProxy>(x, false, rb_cAnd_testContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Not_testContext*> {
+  public:
+    VALUE convert(Python3Parser::Not_testContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Not_testContext>(x, false, rb_cNot_testContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Not_testContextProxy*> {
+  public:
+    VALUE convert(Not_testContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Not_testContextProxy>(x, false, rb_cNot_testContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ComparisonContext*> {
+  public:
+    VALUE convert(Python3Parser::ComparisonContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ComparisonContext>(x, false, rb_cComparisonContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ComparisonContextProxy*> {
+  public:
+    VALUE convert(ComparisonContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ComparisonContextProxy>(x, false, rb_cComparisonContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Comp_opContext*> {
+  public:
+    VALUE convert(Python3Parser::Comp_opContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Comp_opContext>(x, false, rb_cComp_opContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Comp_opContextProxy*> {
+  public:
+    VALUE convert(Comp_opContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Comp_opContextProxy>(x, false, rb_cComp_opContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Xor_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Xor_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Xor_exprContext>(x, false, rb_cXor_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Xor_exprContextProxy*> {
+  public:
+    VALUE convert(Xor_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Xor_exprContextProxy>(x, false, rb_cXor_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::And_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::And_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::And_exprContext>(x, false, rb_cAnd_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<And_exprContextProxy*> {
+  public:
+    VALUE convert(And_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<And_exprContextProxy>(x, false, rb_cAnd_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Shift_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Shift_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Shift_exprContext>(x, false, rb_cShift_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Shift_exprContextProxy*> {
+  public:
+    VALUE convert(Shift_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Shift_exprContextProxy>(x, false, rb_cShift_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Arith_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Arith_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Arith_exprContext>(x, false, rb_cArith_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Arith_exprContextProxy*> {
+  public:
+    VALUE convert(Arith_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Arith_exprContextProxy>(x, false, rb_cArith_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TermContext*> {
+  public:
+    VALUE convert(Python3Parser::TermContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TermContext>(x, false, rb_cTermContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TermContextProxy*> {
+  public:
+    VALUE convert(TermContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TermContextProxy>(x, false, rb_cTermContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::FactorContext*> {
+  public:
+    VALUE convert(Python3Parser::FactorContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::FactorContext>(x, false, rb_cFactorContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<FactorContextProxy*> {
+  public:
+    VALUE convert(FactorContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<FactorContextProxy>(x, false, rb_cFactorContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::PowerContext*> {
+  public:
+    VALUE convert(Python3Parser::PowerContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::PowerContext>(x, false, rb_cPowerContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<PowerContextProxy*> {
+  public:
+    VALUE convert(PowerContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<PowerContextProxy>(x, false, rb_cPowerContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Atom_exprContext*> {
+  public:
+    VALUE convert(Python3Parser::Atom_exprContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Atom_exprContext>(x, false, rb_cAtom_exprContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Atom_exprContextProxy*> {
+  public:
+    VALUE convert(Atom_exprContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Atom_exprContextProxy>(x, false, rb_cAtom_exprContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::AtomContext*> {
+  public:
+    VALUE convert(Python3Parser::AtomContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::AtomContext>(x, false, rb_cAtomContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<AtomContextProxy*> {
+  public:
+    VALUE convert(AtomContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<AtomContextProxy>(x, false, rb_cAtomContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::TrailerContext*> {
+  public:
+    VALUE convert(Python3Parser::TrailerContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::TrailerContext>(x, false, rb_cTrailerContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<TrailerContextProxy*> {
+  public:
+    VALUE convert(TrailerContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<TrailerContextProxy>(x, false, rb_cTrailerContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Testlist_compContext*> {
+  public:
+    VALUE convert(Python3Parser::Testlist_compContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Testlist_compContext>(x, false, rb_cTestlist_compContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Testlist_compContextProxy*> {
+  public:
+    VALUE convert(Testlist_compContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Testlist_compContextProxy>(x, false, rb_cTestlist_compContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::DictorsetmakerContext*> {
+  public:
+    VALUE convert(Python3Parser::DictorsetmakerContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::DictorsetmakerContext>(x, false, rb_cDictorsetmakerContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<DictorsetmakerContextProxy*> {
+  public:
+    VALUE convert(DictorsetmakerContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<DictorsetmakerContextProxy>(x, false, rb_cDictorsetmakerContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Comp_forContext*> {
+  public:
+    VALUE convert(Python3Parser::Comp_forContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Comp_forContext>(x, false, rb_cComp_forContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Comp_forContextProxy*> {
+  public:
+    VALUE convert(Comp_forContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Comp_forContextProxy>(x, false, rb_cComp_forContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::SubscriptlistContext*> {
+  public:
+    VALUE convert(Python3Parser::SubscriptlistContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::SubscriptlistContext>(x, false, rb_cSubscriptlistContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<SubscriptlistContextProxy*> {
+  public:
+    VALUE convert(SubscriptlistContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<SubscriptlistContextProxy>(x, false, rb_cSubscriptlistContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::SubscriptContext*> {
+  public:
+    VALUE convert(Python3Parser::SubscriptContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::SubscriptContext>(x, false, rb_cSubscriptContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<SubscriptContextProxy*> {
+  public:
+    VALUE convert(SubscriptContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<SubscriptContextProxy>(x, false, rb_cSubscriptContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::SliceopContext*> {
+  public:
+    VALUE convert(Python3Parser::SliceopContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::SliceopContext>(x, false, rb_cSliceopContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<SliceopContextProxy*> {
+  public:
+    VALUE convert(SliceopContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<SliceopContextProxy>(x, false, rb_cSliceopContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::ArgumentContext*> {
+  public:
+    VALUE convert(Python3Parser::ArgumentContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::ArgumentContext>(x, false, rb_cArgumentContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<ArgumentContextProxy*> {
+  public:
+    VALUE convert(ArgumentContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ArgumentContextProxy>(x, false, rb_cArgumentContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Comp_iterContext*> {
+  public:
+    VALUE convert(Python3Parser::Comp_iterContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Comp_iterContext>(x, false, rb_cComp_iterContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Comp_iterContextProxy*> {
+  public:
+    VALUE convert(Comp_iterContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Comp_iterContextProxy>(x, false, rb_cComp_iterContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Comp_ifContext*> {
+  public:
+    VALUE convert(Python3Parser::Comp_ifContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Comp_ifContext>(x, false, rb_cComp_ifContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Comp_ifContextProxy*> {
+  public:
+    VALUE convert(Comp_ifContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Comp_ifContextProxy>(x, false, rb_cComp_ifContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Encoding_declContext*> {
+  public:
+    VALUE convert(Python3Parser::Encoding_declContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Encoding_declContext>(x, false, rb_cEncoding_declContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Encoding_declContextProxy*> {
+  public:
+    VALUE convert(Encoding_declContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Encoding_declContextProxy>(x, false, rb_cEncoding_declContext);
+    }
+  };
+}
+
+namespace Rice::detail {
+  template <>
+  class To_Ruby<Python3Parser::Yield_argContext*> {
+  public:
+    VALUE convert(Python3Parser::Yield_argContext* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Python3Parser::Yield_argContext>(x, false, rb_cYield_argContext);
+    }
+  };
+
+  template <>
+  class To_Ruby<Yield_argContextProxy*> {
+  public:
+    VALUE convert(Yield_argContextProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<Yield_argContextProxy>(x, false, rb_cYield_argContext);
+    }
+  };
 }
-
-template <>
-Object to_ruby<tree::ParseTree*>(tree::ParseTree* const &x) {
-  if (!x) return Nil;
-  return Data_Object<tree::ParseTree>(x, rb_cParseTree, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<tree::TerminalNode*>(tree::TerminalNode* const &x) {
-  if (!x) return Nil;
-  return Data_Object<tree::TerminalNode>(x, rb_cTerminalNode, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ContextProxy*>(ContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ContextProxy>(x, rb_cContextProxy, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Single_inputContext*>(Python3Parser::Single_inputContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Single_inputContext>(x, rb_cSingle_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Single_inputContextProxy*>(Single_inputContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Single_inputContextProxy>(x, rb_cSingle_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Simple_stmtContext*>(Python3Parser::Simple_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Simple_stmtContext>(x, rb_cSimple_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Simple_stmtContextProxy*>(Simple_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Simple_stmtContextProxy>(x, rb_cSimple_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Compound_stmtContext*>(Python3Parser::Compound_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Compound_stmtContext>(x, rb_cCompound_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Compound_stmtContextProxy*>(Compound_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Compound_stmtContextProxy>(x, rb_cCompound_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::File_inputContext*>(Python3Parser::File_inputContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::File_inputContext>(x, rb_cFile_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<File_inputContextProxy*>(File_inputContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<File_inputContextProxy>(x, rb_cFile_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::StmtContext*>(Python3Parser::StmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::StmtContext>(x, rb_cStmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<StmtContextProxy*>(StmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<StmtContextProxy>(x, rb_cStmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Eval_inputContext*>(Python3Parser::Eval_inputContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Eval_inputContext>(x, rb_cEval_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Eval_inputContextProxy*>(Eval_inputContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Eval_inputContextProxy>(x, rb_cEval_inputContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TestlistContext*>(Python3Parser::TestlistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TestlistContext>(x, rb_cTestlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TestlistContextProxy*>(TestlistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TestlistContextProxy>(x, rb_cTestlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::DecoratorContext*>(Python3Parser::DecoratorContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::DecoratorContext>(x, rb_cDecoratorContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<DecoratorContextProxy*>(DecoratorContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<DecoratorContextProxy>(x, rb_cDecoratorContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Dotted_nameContext*>(Python3Parser::Dotted_nameContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Dotted_nameContext>(x, rb_cDotted_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Dotted_nameContextProxy*>(Dotted_nameContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Dotted_nameContextProxy>(x, rb_cDotted_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ArglistContext*>(Python3Parser::ArglistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ArglistContext>(x, rb_cArglistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ArglistContextProxy*>(ArglistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ArglistContextProxy>(x, rb_cArglistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::DecoratorsContext*>(Python3Parser::DecoratorsContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::DecoratorsContext>(x, rb_cDecoratorsContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<DecoratorsContextProxy*>(DecoratorsContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<DecoratorsContextProxy>(x, rb_cDecoratorsContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::DecoratedContext*>(Python3Parser::DecoratedContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::DecoratedContext>(x, rb_cDecoratedContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<DecoratedContextProxy*>(DecoratedContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<DecoratedContextProxy>(x, rb_cDecoratedContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ClassdefContext*>(Python3Parser::ClassdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ClassdefContext>(x, rb_cClassdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ClassdefContextProxy*>(ClassdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ClassdefContextProxy>(x, rb_cClassdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::FuncdefContext*>(Python3Parser::FuncdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::FuncdefContext>(x, rb_cFuncdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<FuncdefContextProxy*>(FuncdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<FuncdefContextProxy>(x, rb_cFuncdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Async_funcdefContext*>(Python3Parser::Async_funcdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Async_funcdefContext>(x, rb_cAsync_funcdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Async_funcdefContextProxy*>(Async_funcdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Async_funcdefContextProxy>(x, rb_cAsync_funcdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ParametersContext*>(Python3Parser::ParametersContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ParametersContext>(x, rb_cParametersContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ParametersContextProxy*>(ParametersContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ParametersContextProxy>(x, rb_cParametersContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::SuiteContext*>(Python3Parser::SuiteContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::SuiteContext>(x, rb_cSuiteContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<SuiteContextProxy*>(SuiteContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<SuiteContextProxy>(x, rb_cSuiteContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TestContext*>(Python3Parser::TestContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TestContext>(x, rb_cTestContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TestContextProxy*>(TestContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TestContextProxy>(x, rb_cTestContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TypedargslistContext*>(Python3Parser::TypedargslistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TypedargslistContext>(x, rb_cTypedargslistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TypedargslistContextProxy*>(TypedargslistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TypedargslistContextProxy>(x, rb_cTypedargslistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TfpdefContext*>(Python3Parser::TfpdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TfpdefContext>(x, rb_cTfpdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TfpdefContextProxy*>(TfpdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TfpdefContextProxy>(x, rb_cTfpdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::VarargslistContext*>(Python3Parser::VarargslistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::VarargslistContext>(x, rb_cVarargslistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<VarargslistContextProxy*>(VarargslistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<VarargslistContextProxy>(x, rb_cVarargslistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::VfpdefContext*>(Python3Parser::VfpdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::VfpdefContext>(x, rb_cVfpdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<VfpdefContextProxy*>(VfpdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<VfpdefContextProxy>(x, rb_cVfpdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Small_stmtContext*>(Python3Parser::Small_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Small_stmtContext>(x, rb_cSmall_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Small_stmtContextProxy*>(Small_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Small_stmtContextProxy>(x, rb_cSmall_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Expr_stmtContext*>(Python3Parser::Expr_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Expr_stmtContext>(x, rb_cExpr_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Expr_stmtContextProxy*>(Expr_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Expr_stmtContextProxy>(x, rb_cExpr_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Del_stmtContext*>(Python3Parser::Del_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Del_stmtContext>(x, rb_cDel_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Del_stmtContextProxy*>(Del_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Del_stmtContextProxy>(x, rb_cDel_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Pass_stmtContext*>(Python3Parser::Pass_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Pass_stmtContext>(x, rb_cPass_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Pass_stmtContextProxy*>(Pass_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Pass_stmtContextProxy>(x, rb_cPass_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Flow_stmtContext*>(Python3Parser::Flow_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Flow_stmtContext>(x, rb_cFlow_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Flow_stmtContextProxy*>(Flow_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Flow_stmtContextProxy>(x, rb_cFlow_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Import_stmtContext*>(Python3Parser::Import_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Import_stmtContext>(x, rb_cImport_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Import_stmtContextProxy*>(Import_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Import_stmtContextProxy>(x, rb_cImport_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Global_stmtContext*>(Python3Parser::Global_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Global_stmtContext>(x, rb_cGlobal_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Global_stmtContextProxy*>(Global_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Global_stmtContextProxy>(x, rb_cGlobal_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Nonlocal_stmtContext*>(Python3Parser::Nonlocal_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Nonlocal_stmtContext>(x, rb_cNonlocal_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Nonlocal_stmtContextProxy*>(Nonlocal_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Nonlocal_stmtContextProxy>(x, rb_cNonlocal_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Assert_stmtContext*>(Python3Parser::Assert_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Assert_stmtContext>(x, rb_cAssert_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Assert_stmtContextProxy*>(Assert_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Assert_stmtContextProxy>(x, rb_cAssert_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Testlist_star_exprContext*>(Python3Parser::Testlist_star_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Testlist_star_exprContext>(x, rb_cTestlist_star_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Testlist_star_exprContextProxy*>(Testlist_star_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Testlist_star_exprContextProxy>(x, rb_cTestlist_star_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::AnnassignContext*>(Python3Parser::AnnassignContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::AnnassignContext>(x, rb_cAnnassignContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<AnnassignContextProxy*>(AnnassignContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<AnnassignContextProxy>(x, rb_cAnnassignContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::AugassignContext*>(Python3Parser::AugassignContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::AugassignContext>(x, rb_cAugassignContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<AugassignContextProxy*>(AugassignContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<AugassignContextProxy>(x, rb_cAugassignContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Yield_exprContext*>(Python3Parser::Yield_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Yield_exprContext>(x, rb_cYield_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Yield_exprContextProxy*>(Yield_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Yield_exprContextProxy>(x, rb_cYield_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Star_exprContext*>(Python3Parser::Star_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Star_exprContext>(x, rb_cStar_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Star_exprContextProxy*>(Star_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Star_exprContextProxy>(x, rb_cStar_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ExprlistContext*>(Python3Parser::ExprlistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ExprlistContext>(x, rb_cExprlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ExprlistContextProxy*>(ExprlistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ExprlistContextProxy>(x, rb_cExprlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Break_stmtContext*>(Python3Parser::Break_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Break_stmtContext>(x, rb_cBreak_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Break_stmtContextProxy*>(Break_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Break_stmtContextProxy>(x, rb_cBreak_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Continue_stmtContext*>(Python3Parser::Continue_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Continue_stmtContext>(x, rb_cContinue_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Continue_stmtContextProxy*>(Continue_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Continue_stmtContextProxy>(x, rb_cContinue_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Return_stmtContext*>(Python3Parser::Return_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Return_stmtContext>(x, rb_cReturn_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Return_stmtContextProxy*>(Return_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Return_stmtContextProxy>(x, rb_cReturn_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Raise_stmtContext*>(Python3Parser::Raise_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Raise_stmtContext>(x, rb_cRaise_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Raise_stmtContextProxy*>(Raise_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Raise_stmtContextProxy>(x, rb_cRaise_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Yield_stmtContext*>(Python3Parser::Yield_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Yield_stmtContext>(x, rb_cYield_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Yield_stmtContextProxy*>(Yield_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Yield_stmtContextProxy>(x, rb_cYield_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Import_nameContext*>(Python3Parser::Import_nameContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Import_nameContext>(x, rb_cImport_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Import_nameContextProxy*>(Import_nameContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Import_nameContextProxy>(x, rb_cImport_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Import_fromContext*>(Python3Parser::Import_fromContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Import_fromContext>(x, rb_cImport_fromContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Import_fromContextProxy*>(Import_fromContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Import_fromContextProxy>(x, rb_cImport_fromContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Dotted_as_namesContext*>(Python3Parser::Dotted_as_namesContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Dotted_as_namesContext>(x, rb_cDotted_as_namesContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Dotted_as_namesContextProxy*>(Dotted_as_namesContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Dotted_as_namesContextProxy>(x, rb_cDotted_as_namesContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Import_as_namesContext*>(Python3Parser::Import_as_namesContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Import_as_namesContext>(x, rb_cImport_as_namesContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Import_as_namesContextProxy*>(Import_as_namesContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Import_as_namesContextProxy>(x, rb_cImport_as_namesContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Import_as_nameContext*>(Python3Parser::Import_as_nameContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Import_as_nameContext>(x, rb_cImport_as_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Import_as_nameContextProxy*>(Import_as_nameContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Import_as_nameContextProxy>(x, rb_cImport_as_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Dotted_as_nameContext*>(Python3Parser::Dotted_as_nameContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Dotted_as_nameContext>(x, rb_cDotted_as_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Dotted_as_nameContextProxy*>(Dotted_as_nameContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Dotted_as_nameContextProxy>(x, rb_cDotted_as_nameContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::If_stmtContext*>(Python3Parser::If_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::If_stmtContext>(x, rb_cIf_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<If_stmtContextProxy*>(If_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<If_stmtContextProxy>(x, rb_cIf_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::While_stmtContext*>(Python3Parser::While_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::While_stmtContext>(x, rb_cWhile_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<While_stmtContextProxy*>(While_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<While_stmtContextProxy>(x, rb_cWhile_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::For_stmtContext*>(Python3Parser::For_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::For_stmtContext>(x, rb_cFor_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<For_stmtContextProxy*>(For_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<For_stmtContextProxy>(x, rb_cFor_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Try_stmtContext*>(Python3Parser::Try_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Try_stmtContext>(x, rb_cTry_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Try_stmtContextProxy*>(Try_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Try_stmtContextProxy>(x, rb_cTry_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::With_stmtContext*>(Python3Parser::With_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::With_stmtContext>(x, rb_cWith_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<With_stmtContextProxy*>(With_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<With_stmtContextProxy>(x, rb_cWith_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Async_stmtContext*>(Python3Parser::Async_stmtContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Async_stmtContext>(x, rb_cAsync_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Async_stmtContextProxy*>(Async_stmtContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Async_stmtContextProxy>(x, rb_cAsync_stmtContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Except_clauseContext*>(Python3Parser::Except_clauseContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Except_clauseContext>(x, rb_cExcept_clauseContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Except_clauseContextProxy*>(Except_clauseContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Except_clauseContextProxy>(x, rb_cExcept_clauseContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::With_itemContext*>(Python3Parser::With_itemContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::With_itemContext>(x, rb_cWith_itemContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<With_itemContextProxy*>(With_itemContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<With_itemContextProxy>(x, rb_cWith_itemContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ExprContext*>(Python3Parser::ExprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ExprContext>(x, rb_cExprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ExprContextProxy*>(ExprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ExprContextProxy>(x, rb_cExprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Or_testContext*>(Python3Parser::Or_testContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Or_testContext>(x, rb_cOr_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Or_testContextProxy*>(Or_testContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Or_testContextProxy>(x, rb_cOr_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::LambdefContext*>(Python3Parser::LambdefContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::LambdefContext>(x, rb_cLambdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<LambdefContextProxy*>(LambdefContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<LambdefContextProxy>(x, rb_cLambdefContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Test_nocondContext*>(Python3Parser::Test_nocondContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Test_nocondContext>(x, rb_cTest_nocondContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Test_nocondContextProxy*>(Test_nocondContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Test_nocondContextProxy>(x, rb_cTest_nocondContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Lambdef_nocondContext*>(Python3Parser::Lambdef_nocondContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Lambdef_nocondContext>(x, rb_cLambdef_nocondContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Lambdef_nocondContextProxy*>(Lambdef_nocondContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Lambdef_nocondContextProxy>(x, rb_cLambdef_nocondContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::And_testContext*>(Python3Parser::And_testContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::And_testContext>(x, rb_cAnd_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<And_testContextProxy*>(And_testContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<And_testContextProxy>(x, rb_cAnd_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Not_testContext*>(Python3Parser::Not_testContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Not_testContext>(x, rb_cNot_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Not_testContextProxy*>(Not_testContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Not_testContextProxy>(x, rb_cNot_testContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ComparisonContext*>(Python3Parser::ComparisonContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ComparisonContext>(x, rb_cComparisonContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ComparisonContextProxy*>(ComparisonContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ComparisonContextProxy>(x, rb_cComparisonContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Comp_opContext*>(Python3Parser::Comp_opContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Comp_opContext>(x, rb_cComp_opContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Comp_opContextProxy*>(Comp_opContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Comp_opContextProxy>(x, rb_cComp_opContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Xor_exprContext*>(Python3Parser::Xor_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Xor_exprContext>(x, rb_cXor_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Xor_exprContextProxy*>(Xor_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Xor_exprContextProxy>(x, rb_cXor_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::And_exprContext*>(Python3Parser::And_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::And_exprContext>(x, rb_cAnd_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<And_exprContextProxy*>(And_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<And_exprContextProxy>(x, rb_cAnd_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Shift_exprContext*>(Python3Parser::Shift_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Shift_exprContext>(x, rb_cShift_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Shift_exprContextProxy*>(Shift_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Shift_exprContextProxy>(x, rb_cShift_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Arith_exprContext*>(Python3Parser::Arith_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Arith_exprContext>(x, rb_cArith_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Arith_exprContextProxy*>(Arith_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Arith_exprContextProxy>(x, rb_cArith_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TermContext*>(Python3Parser::TermContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TermContext>(x, rb_cTermContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TermContextProxy*>(TermContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TermContextProxy>(x, rb_cTermContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::FactorContext*>(Python3Parser::FactorContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::FactorContext>(x, rb_cFactorContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<FactorContextProxy*>(FactorContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<FactorContextProxy>(x, rb_cFactorContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::PowerContext*>(Python3Parser::PowerContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::PowerContext>(x, rb_cPowerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<PowerContextProxy*>(PowerContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<PowerContextProxy>(x, rb_cPowerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Atom_exprContext*>(Python3Parser::Atom_exprContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Atom_exprContext>(x, rb_cAtom_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Atom_exprContextProxy*>(Atom_exprContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Atom_exprContextProxy>(x, rb_cAtom_exprContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::AtomContext*>(Python3Parser::AtomContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::AtomContext>(x, rb_cAtomContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<AtomContextProxy*>(AtomContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<AtomContextProxy>(x, rb_cAtomContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::TrailerContext*>(Python3Parser::TrailerContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::TrailerContext>(x, rb_cTrailerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<TrailerContextProxy*>(TrailerContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<TrailerContextProxy>(x, rb_cTrailerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Testlist_compContext*>(Python3Parser::Testlist_compContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Testlist_compContext>(x, rb_cTestlist_compContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Testlist_compContextProxy*>(Testlist_compContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Testlist_compContextProxy>(x, rb_cTestlist_compContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::DictorsetmakerContext*>(Python3Parser::DictorsetmakerContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::DictorsetmakerContext>(x, rb_cDictorsetmakerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<DictorsetmakerContextProxy*>(DictorsetmakerContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<DictorsetmakerContextProxy>(x, rb_cDictorsetmakerContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Comp_forContext*>(Python3Parser::Comp_forContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Comp_forContext>(x, rb_cComp_forContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Comp_forContextProxy*>(Comp_forContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Comp_forContextProxy>(x, rb_cComp_forContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::SubscriptlistContext*>(Python3Parser::SubscriptlistContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::SubscriptlistContext>(x, rb_cSubscriptlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<SubscriptlistContextProxy*>(SubscriptlistContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<SubscriptlistContextProxy>(x, rb_cSubscriptlistContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::SubscriptContext*>(Python3Parser::SubscriptContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::SubscriptContext>(x, rb_cSubscriptContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<SubscriptContextProxy*>(SubscriptContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<SubscriptContextProxy>(x, rb_cSubscriptContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::SliceopContext*>(Python3Parser::SliceopContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::SliceopContext>(x, rb_cSliceopContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<SliceopContextProxy*>(SliceopContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<SliceopContextProxy>(x, rb_cSliceopContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::ArgumentContext*>(Python3Parser::ArgumentContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::ArgumentContext>(x, rb_cArgumentContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<ArgumentContextProxy*>(ArgumentContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ArgumentContextProxy>(x, rb_cArgumentContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Comp_iterContext*>(Python3Parser::Comp_iterContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Comp_iterContext>(x, rb_cComp_iterContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Comp_iterContextProxy*>(Comp_iterContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Comp_iterContextProxy>(x, rb_cComp_iterContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Comp_ifContext*>(Python3Parser::Comp_ifContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Comp_ifContext>(x, rb_cComp_ifContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Comp_ifContextProxy*>(Comp_ifContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Comp_ifContextProxy>(x, rb_cComp_ifContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Encoding_declContext*>(Python3Parser::Encoding_declContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Encoding_declContext>(x, rb_cEncoding_declContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Encoding_declContextProxy*>(Encoding_declContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Encoding_declContextProxy>(x, rb_cEncoding_declContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Python3Parser::Yield_argContext*>(Python3Parser::Yield_argContext* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Python3Parser::Yield_argContext>(x, rb_cYield_argContext, nullptr, nullptr);
-}
-
-template <>
-Object to_ruby<Yield_argContextProxy*>(Yield_argContextProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<Yield_argContextProxy>(x, rb_cYield_argContext, nullptr, nullptr);
-}
-
 
 
 Object Single_inputContextProxy::simple_stmt() {
@@ -2134,7 +2846,7 @@ Object Single_inputContextProxy::simple_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2154,7 +2866,7 @@ Object Single_inputContextProxy::compound_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2168,8 +2880,13 @@ Object Single_inputContextProxy::NEWLINE() {
   }
 
   auto token = ((Python3Parser::Single_inputContext*)orig) -> NEWLINE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Simple_stmtContextProxy::small_stmt() {
@@ -2183,7 +2900,7 @@ Object Simple_stmtContextProxy::small_stmt() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Simple_stmtContextProxy::small_stmtAt(size_t i) {
@@ -2198,7 +2915,7 @@ Object Simple_stmtContextProxy::small_stmtAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2212,25 +2929,30 @@ Object Simple_stmtContextProxy::NEWLINE() {
   }
 
   auto token = ((Python3Parser::Simple_stmtContext*)orig) -> NEWLINE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Simple_stmtContextProxy::SEMI_COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Simple_stmtContext*)orig) -> SEMI_COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Simple_stmtContextProxy::SEMI_COLONAt(size_t i) {
@@ -2239,8 +2961,13 @@ Object Simple_stmtContextProxy::SEMI_COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Simple_stmtContext*)orig) -> SEMI_COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Compound_stmtContextProxy::if_stmt() {
@@ -2255,7 +2982,7 @@ Object Compound_stmtContextProxy::if_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2275,7 +3002,7 @@ Object Compound_stmtContextProxy::while_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2295,7 +3022,7 @@ Object Compound_stmtContextProxy::for_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2315,7 +3042,7 @@ Object Compound_stmtContextProxy::try_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2335,7 +3062,7 @@ Object Compound_stmtContextProxy::with_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2355,7 +3082,7 @@ Object Compound_stmtContextProxy::funcdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2375,7 +3102,7 @@ Object Compound_stmtContextProxy::classdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2395,7 +3122,7 @@ Object Compound_stmtContextProxy::decorated() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2415,7 +3142,7 @@ Object Compound_stmtContextProxy::async_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2434,7 +3161,7 @@ Object File_inputContextProxy::stmt() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object File_inputContextProxy::stmtAt(size_t i) {
@@ -2449,7 +3176,7 @@ Object File_inputContextProxy::stmtAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2463,25 +3190,30 @@ Object File_inputContextProxy::EOF() {
   }
 
   auto token = ((Python3Parser::File_inputContext*)orig) -> EOF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object File_inputContextProxy::NEWLINE() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::File_inputContext*)orig) -> NEWLINE();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object File_inputContextProxy::NEWLINEAt(size_t i) {
@@ -2490,8 +3222,13 @@ Object File_inputContextProxy::NEWLINEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::File_inputContext*)orig) -> NEWLINE(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object StmtContextProxy::simple_stmt() {
@@ -2506,7 +3243,7 @@ Object StmtContextProxy::simple_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2526,7 +3263,7 @@ Object StmtContextProxy::compound_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2546,7 +3283,7 @@ Object Eval_inputContextProxy::testlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2560,25 +3297,30 @@ Object Eval_inputContextProxy::EOF() {
   }
 
   auto token = ((Python3Parser::Eval_inputContext*)orig) -> EOF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Eval_inputContextProxy::NEWLINE() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Eval_inputContext*)orig) -> NEWLINE();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Eval_inputContextProxy::NEWLINEAt(size_t i) {
@@ -2587,8 +3329,13 @@ Object Eval_inputContextProxy::NEWLINEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Eval_inputContext*)orig) -> NEWLINE(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TestlistContextProxy::test() {
@@ -2602,7 +3349,7 @@ Object TestlistContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TestlistContextProxy::testAt(size_t i) {
@@ -2617,7 +3364,7 @@ Object TestlistContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2629,17 +3376,17 @@ Object TestlistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TestlistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TestlistContextProxy::COMMAAt(size_t i) {
@@ -2648,8 +3395,13 @@ Object TestlistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TestlistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DecoratorContextProxy::dotted_name() {
@@ -2664,7 +3416,7 @@ Object DecoratorContextProxy::dotted_name() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2684,7 +3436,7 @@ Object DecoratorContextProxy::arglist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2698,8 +3450,13 @@ Object DecoratorContextProxy::AT() {
   }
 
   auto token = ((Python3Parser::DecoratorContext*)orig) -> AT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DecoratorContextProxy::NEWLINE() {
@@ -2708,8 +3465,13 @@ Object DecoratorContextProxy::NEWLINE() {
   }
 
   auto token = ((Python3Parser::DecoratorContext*)orig) -> NEWLINE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DecoratorContextProxy::OPEN_PAREN() {
@@ -2718,8 +3480,13 @@ Object DecoratorContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::DecoratorContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DecoratorContextProxy::CLOSE_PAREN() {
@@ -2728,25 +3495,30 @@ Object DecoratorContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::DecoratorContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Dotted_nameContextProxy::NAME() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Dotted_nameContext*)orig) -> NAME();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Dotted_nameContextProxy::NAMEAt(size_t i) {
@@ -2755,25 +3527,30 @@ Object Dotted_nameContextProxy::NAMEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Dotted_nameContext*)orig) -> NAME(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Dotted_nameContextProxy::DOT() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Dotted_nameContext*)orig) -> DOT();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Dotted_nameContextProxy::DOTAt(size_t i) {
@@ -2782,8 +3559,13 @@ Object Dotted_nameContextProxy::DOTAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Dotted_nameContext*)orig) -> DOT(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ArglistContextProxy::argument() {
@@ -2797,7 +3579,7 @@ Object ArglistContextProxy::argument() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ArglistContextProxy::argumentAt(size_t i) {
@@ -2812,7 +3594,7 @@ Object ArglistContextProxy::argumentAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2824,17 +3606,17 @@ Object ArglistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::ArglistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ArglistContextProxy::COMMAAt(size_t i) {
@@ -2843,8 +3625,13 @@ Object ArglistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::ArglistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DecoratorsContextProxy::decorator() {
@@ -2858,7 +3645,7 @@ Object DecoratorsContextProxy::decorator() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DecoratorsContextProxy::decoratorAt(size_t i) {
@@ -2873,7 +3660,7 @@ Object DecoratorsContextProxy::decoratorAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2893,7 +3680,7 @@ Object DecoratedContextProxy::decorators() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2913,7 +3700,7 @@ Object DecoratedContextProxy::classdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2933,7 +3720,7 @@ Object DecoratedContextProxy::funcdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2953,7 +3740,7 @@ Object DecoratedContextProxy::async_funcdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2973,7 +3760,7 @@ Object ClassdefContextProxy::suite() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -2993,7 +3780,7 @@ Object ClassdefContextProxy::arglist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3007,8 +3794,13 @@ Object ClassdefContextProxy::CLASS() {
   }
 
   auto token = ((Python3Parser::ClassdefContext*)orig) -> CLASS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ClassdefContextProxy::NAME() {
@@ -3017,8 +3809,13 @@ Object ClassdefContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::ClassdefContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ClassdefContextProxy::COLON() {
@@ -3027,8 +3824,13 @@ Object ClassdefContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::ClassdefContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ClassdefContextProxy::OPEN_PAREN() {
@@ -3037,8 +3839,13 @@ Object ClassdefContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::ClassdefContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ClassdefContextProxy::CLOSE_PAREN() {
@@ -3047,8 +3854,13 @@ Object ClassdefContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::ClassdefContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FuncdefContextProxy::parameters() {
@@ -3063,7 +3875,7 @@ Object FuncdefContextProxy::parameters() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3083,7 +3895,7 @@ Object FuncdefContextProxy::suite() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3103,7 +3915,7 @@ Object FuncdefContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3117,8 +3929,13 @@ Object FuncdefContextProxy::DEF() {
   }
 
   auto token = ((Python3Parser::FuncdefContext*)orig) -> DEF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FuncdefContextProxy::NAME() {
@@ -3127,8 +3944,13 @@ Object FuncdefContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::FuncdefContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FuncdefContextProxy::COLON() {
@@ -3137,8 +3959,13 @@ Object FuncdefContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::FuncdefContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FuncdefContextProxy::ARROW() {
@@ -3147,8 +3974,13 @@ Object FuncdefContextProxy::ARROW() {
   }
 
   auto token = ((Python3Parser::FuncdefContext*)orig) -> ARROW();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Async_funcdefContextProxy::funcdef() {
@@ -3163,7 +3995,7 @@ Object Async_funcdefContextProxy::funcdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3177,8 +4009,13 @@ Object Async_funcdefContextProxy::ASYNC() {
   }
 
   auto token = ((Python3Parser::Async_funcdefContext*)orig) -> ASYNC();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ParametersContextProxy::typedargslist() {
@@ -3193,7 +4030,7 @@ Object ParametersContextProxy::typedargslist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3207,8 +4044,13 @@ Object ParametersContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::ParametersContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ParametersContextProxy::CLOSE_PAREN() {
@@ -3217,8 +4059,13 @@ Object ParametersContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::ParametersContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SuiteContextProxy::simple_stmt() {
@@ -3233,7 +4080,7 @@ Object SuiteContextProxy::simple_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3252,7 +4099,7 @@ Object SuiteContextProxy::stmt() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object SuiteContextProxy::stmtAt(size_t i) {
@@ -3267,7 +4114,7 @@ Object SuiteContextProxy::stmtAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3281,8 +4128,13 @@ Object SuiteContextProxy::NEWLINE() {
   }
 
   auto token = ((Python3Parser::SuiteContext*)orig) -> NEWLINE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SuiteContextProxy::INDENT() {
@@ -3291,8 +4143,13 @@ Object SuiteContextProxy::INDENT() {
   }
 
   auto token = ((Python3Parser::SuiteContext*)orig) -> INDENT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SuiteContextProxy::DEDENT() {
@@ -3301,8 +4158,13 @@ Object SuiteContextProxy::DEDENT() {
   }
 
   auto token = ((Python3Parser::SuiteContext*)orig) -> DEDENT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TestContextProxy::or_test() {
@@ -3316,7 +4178,7 @@ Object TestContextProxy::or_test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TestContextProxy::or_testAt(size_t i) {
@@ -3331,7 +4193,7 @@ Object TestContextProxy::or_testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3351,7 +4213,7 @@ Object TestContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3371,7 +4233,7 @@ Object TestContextProxy::lambdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3385,8 +4247,13 @@ Object TestContextProxy::IF() {
   }
 
   auto token = ((Python3Parser::TestContext*)orig) -> IF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TestContextProxy::ELSE() {
@@ -3395,8 +4262,13 @@ Object TestContextProxy::ELSE() {
   }
 
   auto token = ((Python3Parser::TestContext*)orig) -> ELSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TypedargslistContextProxy::tfpdef() {
@@ -3410,7 +4282,7 @@ Object TypedargslistContextProxy::tfpdef() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TypedargslistContextProxy::tfpdefAt(size_t i) {
@@ -3425,7 +4297,7 @@ Object TypedargslistContextProxy::tfpdefAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3444,7 +4316,7 @@ Object TypedargslistContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TypedargslistContextProxy::testAt(size_t i) {
@@ -3459,7 +4331,7 @@ Object TypedargslistContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3473,8 +4345,13 @@ Object TypedargslistContextProxy::STAR() {
   }
 
   auto token = ((Python3Parser::TypedargslistContext*)orig) -> STAR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TypedargslistContextProxy::POWER() {
@@ -3483,25 +4360,30 @@ Object TypedargslistContextProxy::POWER() {
   }
 
   auto token = ((Python3Parser::TypedargslistContext*)orig) -> POWER();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TypedargslistContextProxy::ASSIGN() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TypedargslistContext*)orig) -> ASSIGN();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TypedargslistContextProxy::ASSIGNAt(size_t i) {
@@ -3510,25 +4392,30 @@ Object TypedargslistContextProxy::ASSIGNAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TypedargslistContext*)orig) -> ASSIGN(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TypedargslistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TypedargslistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TypedargslistContextProxy::COMMAAt(size_t i) {
@@ -3537,8 +4424,13 @@ Object TypedargslistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TypedargslistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TfpdefContextProxy::test() {
@@ -3553,7 +4445,7 @@ Object TfpdefContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3567,8 +4459,13 @@ Object TfpdefContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::TfpdefContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TfpdefContextProxy::COLON() {
@@ -3577,8 +4474,13 @@ Object TfpdefContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::TfpdefContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object VarargslistContextProxy::vfpdef() {
@@ -3592,7 +4494,7 @@ Object VarargslistContextProxy::vfpdef() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object VarargslistContextProxy::vfpdefAt(size_t i) {
@@ -3607,7 +4509,7 @@ Object VarargslistContextProxy::vfpdefAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3626,7 +4528,7 @@ Object VarargslistContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object VarargslistContextProxy::testAt(size_t i) {
@@ -3641,7 +4543,7 @@ Object VarargslistContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3655,8 +4557,13 @@ Object VarargslistContextProxy::STAR() {
   }
 
   auto token = ((Python3Parser::VarargslistContext*)orig) -> STAR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object VarargslistContextProxy::POWER() {
@@ -3665,25 +4572,30 @@ Object VarargslistContextProxy::POWER() {
   }
 
   auto token = ((Python3Parser::VarargslistContext*)orig) -> POWER();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object VarargslistContextProxy::ASSIGN() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::VarargslistContext*)orig) -> ASSIGN();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object VarargslistContextProxy::ASSIGNAt(size_t i) {
@@ -3692,25 +4604,30 @@ Object VarargslistContextProxy::ASSIGNAt(size_t i) {
   }
 
   auto token = ((Python3Parser::VarargslistContext*)orig) -> ASSIGN(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object VarargslistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::VarargslistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object VarargslistContextProxy::COMMAAt(size_t i) {
@@ -3719,8 +4636,13 @@ Object VarargslistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::VarargslistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object VfpdefContextProxy::NAME() {
@@ -3729,8 +4651,13 @@ Object VfpdefContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::VfpdefContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Small_stmtContextProxy::expr_stmt() {
@@ -3745,7 +4672,7 @@ Object Small_stmtContextProxy::expr_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3765,7 +4692,7 @@ Object Small_stmtContextProxy::del_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3785,7 +4712,7 @@ Object Small_stmtContextProxy::pass_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3805,7 +4732,7 @@ Object Small_stmtContextProxy::flow_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3825,7 +4752,7 @@ Object Small_stmtContextProxy::import_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3845,7 +4772,7 @@ Object Small_stmtContextProxy::global_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3865,7 +4792,7 @@ Object Small_stmtContextProxy::nonlocal_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3885,7 +4812,7 @@ Object Small_stmtContextProxy::assert_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3904,7 +4831,7 @@ Object Expr_stmtContextProxy::testlist_star_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Expr_stmtContextProxy::testlist_star_exprAt(size_t i) {
@@ -3919,7 +4846,7 @@ Object Expr_stmtContextProxy::testlist_star_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3939,7 +4866,7 @@ Object Expr_stmtContextProxy::annassign() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3959,7 +4886,7 @@ Object Expr_stmtContextProxy::augassign() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -3978,7 +4905,7 @@ Object Expr_stmtContextProxy::yield_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Expr_stmtContextProxy::yield_exprAt(size_t i) {
@@ -3993,7 +4920,7 @@ Object Expr_stmtContextProxy::yield_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4013,7 +4940,7 @@ Object Expr_stmtContextProxy::testlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4025,17 +4952,17 @@ Object Expr_stmtContextProxy::ASSIGN() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Expr_stmtContext*)orig) -> ASSIGN();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Expr_stmtContextProxy::ASSIGNAt(size_t i) {
@@ -4044,8 +4971,13 @@ Object Expr_stmtContextProxy::ASSIGNAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Expr_stmtContext*)orig) -> ASSIGN(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Del_stmtContextProxy::exprlist() {
@@ -4060,7 +4992,7 @@ Object Del_stmtContextProxy::exprlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4074,8 +5006,13 @@ Object Del_stmtContextProxy::DEL() {
   }
 
   auto token = ((Python3Parser::Del_stmtContext*)orig) -> DEL();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Pass_stmtContextProxy::PASS() {
@@ -4084,8 +5021,13 @@ Object Pass_stmtContextProxy::PASS() {
   }
 
   auto token = ((Python3Parser::Pass_stmtContext*)orig) -> PASS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Flow_stmtContextProxy::break_stmt() {
@@ -4100,7 +5042,7 @@ Object Flow_stmtContextProxy::break_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4120,7 +5062,7 @@ Object Flow_stmtContextProxy::continue_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4140,7 +5082,7 @@ Object Flow_stmtContextProxy::return_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4160,7 +5102,7 @@ Object Flow_stmtContextProxy::raise_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4180,7 +5122,7 @@ Object Flow_stmtContextProxy::yield_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4200,7 +5142,7 @@ Object Import_stmtContextProxy::import_name() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4220,7 +5162,7 @@ Object Import_stmtContextProxy::import_from() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4234,25 +5176,30 @@ Object Global_stmtContextProxy::GLOBAL() {
   }
 
   auto token = ((Python3Parser::Global_stmtContext*)orig) -> GLOBAL();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Global_stmtContextProxy::NAME() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Global_stmtContext*)orig) -> NAME();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Global_stmtContextProxy::NAMEAt(size_t i) {
@@ -4261,25 +5208,30 @@ Object Global_stmtContextProxy::NAMEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Global_stmtContext*)orig) -> NAME(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Global_stmtContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Global_stmtContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Global_stmtContextProxy::COMMAAt(size_t i) {
@@ -4288,8 +5240,13 @@ Object Global_stmtContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Global_stmtContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Nonlocal_stmtContextProxy::NONLOCAL() {
@@ -4298,25 +5255,30 @@ Object Nonlocal_stmtContextProxy::NONLOCAL() {
   }
 
   auto token = ((Python3Parser::Nonlocal_stmtContext*)orig) -> NONLOCAL();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Nonlocal_stmtContextProxy::NAME() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Nonlocal_stmtContext*)orig) -> NAME();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Nonlocal_stmtContextProxy::NAMEAt(size_t i) {
@@ -4325,25 +5287,30 @@ Object Nonlocal_stmtContextProxy::NAMEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Nonlocal_stmtContext*)orig) -> NAME(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Nonlocal_stmtContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Nonlocal_stmtContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Nonlocal_stmtContextProxy::COMMAAt(size_t i) {
@@ -4352,8 +5319,13 @@ Object Nonlocal_stmtContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Nonlocal_stmtContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Assert_stmtContextProxy::test() {
@@ -4367,7 +5339,7 @@ Object Assert_stmtContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Assert_stmtContextProxy::testAt(size_t i) {
@@ -4382,7 +5354,7 @@ Object Assert_stmtContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4396,8 +5368,13 @@ Object Assert_stmtContextProxy::ASSERT() {
   }
 
   auto token = ((Python3Parser::Assert_stmtContext*)orig) -> ASSERT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Assert_stmtContextProxy::COMMA() {
@@ -4406,8 +5383,13 @@ Object Assert_stmtContextProxy::COMMA() {
   }
 
   auto token = ((Python3Parser::Assert_stmtContext*)orig) -> COMMA();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Testlist_star_exprContextProxy::test() {
@@ -4421,7 +5403,7 @@ Object Testlist_star_exprContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_star_exprContextProxy::testAt(size_t i) {
@@ -4436,7 +5418,7 @@ Object Testlist_star_exprContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4455,7 +5437,7 @@ Object Testlist_star_exprContextProxy::star_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_star_exprContextProxy::star_exprAt(size_t i) {
@@ -4470,7 +5452,7 @@ Object Testlist_star_exprContextProxy::star_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4482,17 +5464,17 @@ Object Testlist_star_exprContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Testlist_star_exprContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_star_exprContextProxy::COMMAAt(size_t i) {
@@ -4501,8 +5483,13 @@ Object Testlist_star_exprContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Testlist_star_exprContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AnnassignContextProxy::test() {
@@ -4516,7 +5503,7 @@ Object AnnassignContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object AnnassignContextProxy::testAt(size_t i) {
@@ -4531,7 +5518,7 @@ Object AnnassignContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4545,8 +5532,13 @@ Object AnnassignContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::AnnassignContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AnnassignContextProxy::ASSIGN() {
@@ -4555,8 +5547,13 @@ Object AnnassignContextProxy::ASSIGN() {
   }
 
   auto token = ((Python3Parser::AnnassignContext*)orig) -> ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::ADD_ASSIGN() {
@@ -4565,8 +5562,13 @@ Object AugassignContextProxy::ADD_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> ADD_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::SUB_ASSIGN() {
@@ -4575,8 +5577,13 @@ Object AugassignContextProxy::SUB_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> SUB_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::MULT_ASSIGN() {
@@ -4585,8 +5592,13 @@ Object AugassignContextProxy::MULT_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> MULT_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::AT_ASSIGN() {
@@ -4595,8 +5607,13 @@ Object AugassignContextProxy::AT_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> AT_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::DIV_ASSIGN() {
@@ -4605,8 +5622,13 @@ Object AugassignContextProxy::DIV_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> DIV_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::MOD_ASSIGN() {
@@ -4615,8 +5637,13 @@ Object AugassignContextProxy::MOD_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> MOD_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::AND_ASSIGN() {
@@ -4625,8 +5652,13 @@ Object AugassignContextProxy::AND_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> AND_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::OR_ASSIGN() {
@@ -4635,8 +5667,13 @@ Object AugassignContextProxy::OR_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> OR_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::XOR_ASSIGN() {
@@ -4645,8 +5682,13 @@ Object AugassignContextProxy::XOR_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> XOR_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::LEFT_SHIFT_ASSIGN() {
@@ -4655,8 +5697,13 @@ Object AugassignContextProxy::LEFT_SHIFT_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> LEFT_SHIFT_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::RIGHT_SHIFT_ASSIGN() {
@@ -4665,8 +5712,13 @@ Object AugassignContextProxy::RIGHT_SHIFT_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> RIGHT_SHIFT_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::POWER_ASSIGN() {
@@ -4675,8 +5727,13 @@ Object AugassignContextProxy::POWER_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> POWER_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AugassignContextProxy::IDIV_ASSIGN() {
@@ -4685,8 +5742,13 @@ Object AugassignContextProxy::IDIV_ASSIGN() {
   }
 
   auto token = ((Python3Parser::AugassignContext*)orig) -> IDIV_ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Yield_exprContextProxy::yield_arg() {
@@ -4701,7 +5763,7 @@ Object Yield_exprContextProxy::yield_arg() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4715,8 +5777,13 @@ Object Yield_exprContextProxy::YIELD() {
   }
 
   auto token = ((Python3Parser::Yield_exprContext*)orig) -> YIELD();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Star_exprContextProxy::expr() {
@@ -4731,7 +5798,7 @@ Object Star_exprContextProxy::expr() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4745,8 +5812,13 @@ Object Star_exprContextProxy::STAR() {
   }
 
   auto token = ((Python3Parser::Star_exprContext*)orig) -> STAR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ExprlistContextProxy::expr() {
@@ -4760,7 +5832,7 @@ Object ExprlistContextProxy::expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ExprlistContextProxy::exprAt(size_t i) {
@@ -4775,7 +5847,7 @@ Object ExprlistContextProxy::exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4794,7 +5866,7 @@ Object ExprlistContextProxy::star_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ExprlistContextProxy::star_exprAt(size_t i) {
@@ -4809,7 +5881,7 @@ Object ExprlistContextProxy::star_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4821,17 +5893,17 @@ Object ExprlistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::ExprlistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ExprlistContextProxy::COMMAAt(size_t i) {
@@ -4840,8 +5912,13 @@ Object ExprlistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::ExprlistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Break_stmtContextProxy::BREAK() {
@@ -4850,8 +5927,13 @@ Object Break_stmtContextProxy::BREAK() {
   }
 
   auto token = ((Python3Parser::Break_stmtContext*)orig) -> BREAK();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Continue_stmtContextProxy::CONTINUE() {
@@ -4860,8 +5942,13 @@ Object Continue_stmtContextProxy::CONTINUE() {
   }
 
   auto token = ((Python3Parser::Continue_stmtContext*)orig) -> CONTINUE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Return_stmtContextProxy::testlist() {
@@ -4876,7 +5963,7 @@ Object Return_stmtContextProxy::testlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4890,8 +5977,13 @@ Object Return_stmtContextProxy::RETURN() {
   }
 
   auto token = ((Python3Parser::Return_stmtContext*)orig) -> RETURN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Raise_stmtContextProxy::test() {
@@ -4905,7 +5997,7 @@ Object Raise_stmtContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Raise_stmtContextProxy::testAt(size_t i) {
@@ -4920,7 +6012,7 @@ Object Raise_stmtContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4934,8 +6026,13 @@ Object Raise_stmtContextProxy::RAISE() {
   }
 
   auto token = ((Python3Parser::Raise_stmtContext*)orig) -> RAISE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Raise_stmtContextProxy::FROM() {
@@ -4944,8 +6041,13 @@ Object Raise_stmtContextProxy::FROM() {
   }
 
   auto token = ((Python3Parser::Raise_stmtContext*)orig) -> FROM();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Yield_stmtContextProxy::yield_expr() {
@@ -4960,7 +6062,7 @@ Object Yield_stmtContextProxy::yield_expr() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4980,7 +6082,7 @@ Object Import_nameContextProxy::dotted_as_names() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -4994,8 +6096,13 @@ Object Import_nameContextProxy::IMPORT() {
   }
 
   auto token = ((Python3Parser::Import_nameContext*)orig) -> IMPORT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::dotted_name() {
@@ -5010,7 +6117,7 @@ Object Import_fromContextProxy::dotted_name() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5030,7 +6137,7 @@ Object Import_fromContextProxy::import_as_names() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5044,8 +6151,13 @@ Object Import_fromContextProxy::FROM() {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> FROM();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::IMPORT() {
@@ -5054,8 +6166,13 @@ Object Import_fromContextProxy::IMPORT() {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> IMPORT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::STAR() {
@@ -5064,8 +6181,13 @@ Object Import_fromContextProxy::STAR() {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> STAR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::OPEN_PAREN() {
@@ -5074,8 +6196,13 @@ Object Import_fromContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::CLOSE_PAREN() {
@@ -5084,25 +6211,30 @@ Object Import_fromContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::DOT() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Import_fromContext*)orig) -> DOT();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Import_fromContextProxy::DOTAt(size_t i) {
@@ -5111,25 +6243,30 @@ Object Import_fromContextProxy::DOTAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> DOT(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_fromContextProxy::ELLIPSIS() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Import_fromContext*)orig) -> ELLIPSIS();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Import_fromContextProxy::ELLIPSISAt(size_t i) {
@@ -5138,8 +6275,13 @@ Object Import_fromContextProxy::ELLIPSISAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Import_fromContext*)orig) -> ELLIPSIS(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Dotted_as_namesContextProxy::dotted_as_name() {
@@ -5153,7 +6295,7 @@ Object Dotted_as_namesContextProxy::dotted_as_name() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Dotted_as_namesContextProxy::dotted_as_nameAt(size_t i) {
@@ -5168,7 +6310,7 @@ Object Dotted_as_namesContextProxy::dotted_as_nameAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5180,17 +6322,17 @@ Object Dotted_as_namesContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Dotted_as_namesContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Dotted_as_namesContextProxy::COMMAAt(size_t i) {
@@ -5199,8 +6341,13 @@ Object Dotted_as_namesContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Dotted_as_namesContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_as_namesContextProxy::import_as_name() {
@@ -5214,7 +6361,7 @@ Object Import_as_namesContextProxy::import_as_name() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Import_as_namesContextProxy::import_as_nameAt(size_t i) {
@@ -5229,7 +6376,7 @@ Object Import_as_namesContextProxy::import_as_nameAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5241,17 +6388,17 @@ Object Import_as_namesContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Import_as_namesContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Import_as_namesContextProxy::COMMAAt(size_t i) {
@@ -5260,25 +6407,30 @@ Object Import_as_namesContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Import_as_namesContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_as_nameContextProxy::NAME() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Import_as_nameContext*)orig) -> NAME();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Import_as_nameContextProxy::NAMEAt(size_t i) {
@@ -5287,8 +6439,13 @@ Object Import_as_nameContextProxy::NAMEAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Import_as_nameContext*)orig) -> NAME(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Import_as_nameContextProxy::AS() {
@@ -5297,8 +6454,13 @@ Object Import_as_nameContextProxy::AS() {
   }
 
   auto token = ((Python3Parser::Import_as_nameContext*)orig) -> AS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Dotted_as_nameContextProxy::dotted_name() {
@@ -5313,7 +6475,7 @@ Object Dotted_as_nameContextProxy::dotted_name() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5327,8 +6489,13 @@ Object Dotted_as_nameContextProxy::AS() {
   }
 
   auto token = ((Python3Parser::Dotted_as_nameContext*)orig) -> AS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Dotted_as_nameContextProxy::NAME() {
@@ -5337,8 +6504,13 @@ Object Dotted_as_nameContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::Dotted_as_nameContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object If_stmtContextProxy::test() {
@@ -5352,7 +6524,7 @@ Object If_stmtContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object If_stmtContextProxy::testAt(size_t i) {
@@ -5367,7 +6539,7 @@ Object If_stmtContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5386,7 +6558,7 @@ Object If_stmtContextProxy::suite() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object If_stmtContextProxy::suiteAt(size_t i) {
@@ -5401,7 +6573,7 @@ Object If_stmtContextProxy::suiteAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5415,25 +6587,30 @@ Object If_stmtContextProxy::IF() {
   }
 
   auto token = ((Python3Parser::If_stmtContext*)orig) -> IF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object If_stmtContextProxy::COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::If_stmtContext*)orig) -> COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object If_stmtContextProxy::COLONAt(size_t i) {
@@ -5442,25 +6619,30 @@ Object If_stmtContextProxy::COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::If_stmtContext*)orig) -> COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object If_stmtContextProxy::ELIF() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::If_stmtContext*)orig) -> ELIF();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object If_stmtContextProxy::ELIFAt(size_t i) {
@@ -5469,8 +6651,13 @@ Object If_stmtContextProxy::ELIFAt(size_t i) {
   }
 
   auto token = ((Python3Parser::If_stmtContext*)orig) -> ELIF(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object If_stmtContextProxy::ELSE() {
@@ -5479,8 +6666,13 @@ Object If_stmtContextProxy::ELSE() {
   }
 
   auto token = ((Python3Parser::If_stmtContext*)orig) -> ELSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object While_stmtContextProxy::test() {
@@ -5495,7 +6687,7 @@ Object While_stmtContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5514,7 +6706,7 @@ Object While_stmtContextProxy::suite() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object While_stmtContextProxy::suiteAt(size_t i) {
@@ -5529,7 +6721,7 @@ Object While_stmtContextProxy::suiteAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5543,25 +6735,30 @@ Object While_stmtContextProxy::WHILE() {
   }
 
   auto token = ((Python3Parser::While_stmtContext*)orig) -> WHILE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object While_stmtContextProxy::COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::While_stmtContext*)orig) -> COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object While_stmtContextProxy::COLONAt(size_t i) {
@@ -5570,8 +6767,13 @@ Object While_stmtContextProxy::COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::While_stmtContext*)orig) -> COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object While_stmtContextProxy::ELSE() {
@@ -5580,8 +6782,13 @@ Object While_stmtContextProxy::ELSE() {
   }
 
   auto token = ((Python3Parser::While_stmtContext*)orig) -> ELSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object For_stmtContextProxy::exprlist() {
@@ -5596,7 +6803,7 @@ Object For_stmtContextProxy::exprlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5616,7 +6823,7 @@ Object For_stmtContextProxy::testlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5635,7 +6842,7 @@ Object For_stmtContextProxy::suite() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object For_stmtContextProxy::suiteAt(size_t i) {
@@ -5650,7 +6857,7 @@ Object For_stmtContextProxy::suiteAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5664,8 +6871,13 @@ Object For_stmtContextProxy::FOR() {
   }
 
   auto token = ((Python3Parser::For_stmtContext*)orig) -> FOR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object For_stmtContextProxy::IN() {
@@ -5674,25 +6886,30 @@ Object For_stmtContextProxy::IN() {
   }
 
   auto token = ((Python3Parser::For_stmtContext*)orig) -> IN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object For_stmtContextProxy::COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::For_stmtContext*)orig) -> COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object For_stmtContextProxy::COLONAt(size_t i) {
@@ -5701,8 +6918,13 @@ Object For_stmtContextProxy::COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::For_stmtContext*)orig) -> COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object For_stmtContextProxy::ELSE() {
@@ -5711,8 +6933,13 @@ Object For_stmtContextProxy::ELSE() {
   }
 
   auto token = ((Python3Parser::For_stmtContext*)orig) -> ELSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Try_stmtContextProxy::suite() {
@@ -5726,7 +6953,7 @@ Object Try_stmtContextProxy::suite() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Try_stmtContextProxy::suiteAt(size_t i) {
@@ -5741,7 +6968,7 @@ Object Try_stmtContextProxy::suiteAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5760,7 +6987,7 @@ Object Try_stmtContextProxy::except_clause() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Try_stmtContextProxy::except_clauseAt(size_t i) {
@@ -5775,7 +7002,7 @@ Object Try_stmtContextProxy::except_clauseAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5789,25 +7016,30 @@ Object Try_stmtContextProxy::TRY() {
   }
 
   auto token = ((Python3Parser::Try_stmtContext*)orig) -> TRY();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Try_stmtContextProxy::COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Try_stmtContext*)orig) -> COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Try_stmtContextProxy::COLONAt(size_t i) {
@@ -5816,8 +7048,13 @@ Object Try_stmtContextProxy::COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Try_stmtContext*)orig) -> COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Try_stmtContextProxy::FINALLY() {
@@ -5826,8 +7063,13 @@ Object Try_stmtContextProxy::FINALLY() {
   }
 
   auto token = ((Python3Parser::Try_stmtContext*)orig) -> FINALLY();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Try_stmtContextProxy::ELSE() {
@@ -5836,8 +7078,13 @@ Object Try_stmtContextProxy::ELSE() {
   }
 
   auto token = ((Python3Parser::Try_stmtContext*)orig) -> ELSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object With_stmtContextProxy::with_item() {
@@ -5851,7 +7098,7 @@ Object With_stmtContextProxy::with_item() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object With_stmtContextProxy::with_itemAt(size_t i) {
@@ -5866,7 +7113,7 @@ Object With_stmtContextProxy::with_itemAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5886,7 +7133,7 @@ Object With_stmtContextProxy::suite() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5900,8 +7147,13 @@ Object With_stmtContextProxy::WITH() {
   }
 
   auto token = ((Python3Parser::With_stmtContext*)orig) -> WITH();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object With_stmtContextProxy::COLON() {
@@ -5910,25 +7162,30 @@ Object With_stmtContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::With_stmtContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object With_stmtContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::With_stmtContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object With_stmtContextProxy::COMMAAt(size_t i) {
@@ -5937,8 +7194,13 @@ Object With_stmtContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::With_stmtContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Async_stmtContextProxy::funcdef() {
@@ -5953,7 +7215,7 @@ Object Async_stmtContextProxy::funcdef() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5973,7 +7235,7 @@ Object Async_stmtContextProxy::with_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -5993,7 +7255,7 @@ Object Async_stmtContextProxy::for_stmt() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6007,8 +7269,13 @@ Object Async_stmtContextProxy::ASYNC() {
   }
 
   auto token = ((Python3Parser::Async_stmtContext*)orig) -> ASYNC();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Except_clauseContextProxy::test() {
@@ -6023,7 +7290,7 @@ Object Except_clauseContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6037,8 +7304,13 @@ Object Except_clauseContextProxy::EXCEPT() {
   }
 
   auto token = ((Python3Parser::Except_clauseContext*)orig) -> EXCEPT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Except_clauseContextProxy::AS() {
@@ -6047,8 +7319,13 @@ Object Except_clauseContextProxy::AS() {
   }
 
   auto token = ((Python3Parser::Except_clauseContext*)orig) -> AS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Except_clauseContextProxy::NAME() {
@@ -6057,8 +7334,13 @@ Object Except_clauseContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::Except_clauseContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object With_itemContextProxy::test() {
@@ -6073,7 +7355,7 @@ Object With_itemContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6093,7 +7375,7 @@ Object With_itemContextProxy::expr() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6107,8 +7389,13 @@ Object With_itemContextProxy::AS() {
   }
 
   auto token = ((Python3Parser::With_itemContext*)orig) -> AS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ExprContextProxy::xor_expr() {
@@ -6122,7 +7409,7 @@ Object ExprContextProxy::xor_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ExprContextProxy::xor_exprAt(size_t i) {
@@ -6137,7 +7424,7 @@ Object ExprContextProxy::xor_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6149,17 +7436,17 @@ Object ExprContextProxy::OR_OP() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::ExprContext*)orig) -> OR_OP();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ExprContextProxy::OR_OPAt(size_t i) {
@@ -6168,8 +7455,13 @@ Object ExprContextProxy::OR_OPAt(size_t i) {
   }
 
   auto token = ((Python3Parser::ExprContext*)orig) -> OR_OP(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Or_testContextProxy::and_test() {
@@ -6183,7 +7475,7 @@ Object Or_testContextProxy::and_test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Or_testContextProxy::and_testAt(size_t i) {
@@ -6198,7 +7490,7 @@ Object Or_testContextProxy::and_testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6210,17 +7502,17 @@ Object Or_testContextProxy::OR() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Or_testContext*)orig) -> OR();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Or_testContextProxy::ORAt(size_t i) {
@@ -6229,8 +7521,13 @@ Object Or_testContextProxy::ORAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Or_testContext*)orig) -> OR(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object LambdefContextProxy::test() {
@@ -6245,7 +7542,7 @@ Object LambdefContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6265,7 +7562,7 @@ Object LambdefContextProxy::varargslist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6279,8 +7576,13 @@ Object LambdefContextProxy::LAMBDA() {
   }
 
   auto token = ((Python3Parser::LambdefContext*)orig) -> LAMBDA();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object LambdefContextProxy::COLON() {
@@ -6289,8 +7591,13 @@ Object LambdefContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::LambdefContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Test_nocondContextProxy::or_test() {
@@ -6305,7 +7612,7 @@ Object Test_nocondContextProxy::or_test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6325,7 +7632,7 @@ Object Test_nocondContextProxy::lambdef_nocond() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6345,7 +7652,7 @@ Object Lambdef_nocondContextProxy::test_nocond() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6365,7 +7672,7 @@ Object Lambdef_nocondContextProxy::varargslist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6379,8 +7686,13 @@ Object Lambdef_nocondContextProxy::LAMBDA() {
   }
 
   auto token = ((Python3Parser::Lambdef_nocondContext*)orig) -> LAMBDA();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Lambdef_nocondContextProxy::COLON() {
@@ -6389,8 +7701,13 @@ Object Lambdef_nocondContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::Lambdef_nocondContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object And_testContextProxy::not_test() {
@@ -6404,7 +7721,7 @@ Object And_testContextProxy::not_test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object And_testContextProxy::not_testAt(size_t i) {
@@ -6419,7 +7736,7 @@ Object And_testContextProxy::not_testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6431,17 +7748,17 @@ Object And_testContextProxy::AND() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::And_testContext*)orig) -> AND();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object And_testContextProxy::ANDAt(size_t i) {
@@ -6450,8 +7767,13 @@ Object And_testContextProxy::ANDAt(size_t i) {
   }
 
   auto token = ((Python3Parser::And_testContext*)orig) -> AND(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Not_testContextProxy::not_test() {
@@ -6466,7 +7788,7 @@ Object Not_testContextProxy::not_test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6486,7 +7808,7 @@ Object Not_testContextProxy::comparison() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6500,8 +7822,13 @@ Object Not_testContextProxy::NOT() {
   }
 
   auto token = ((Python3Parser::Not_testContext*)orig) -> NOT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ComparisonContextProxy::expr() {
@@ -6515,7 +7842,7 @@ Object ComparisonContextProxy::expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ComparisonContextProxy::exprAt(size_t i) {
@@ -6530,7 +7857,7 @@ Object ComparisonContextProxy::exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6549,7 +7876,7 @@ Object ComparisonContextProxy::comp_op() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ComparisonContextProxy::comp_opAt(size_t i) {
@@ -6564,7 +7891,7 @@ Object ComparisonContextProxy::comp_opAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6578,8 +7905,13 @@ Object Comp_opContextProxy::LESS_THAN() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> LESS_THAN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::GREATER_THAN() {
@@ -6588,8 +7920,13 @@ Object Comp_opContextProxy::GREATER_THAN() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> GREATER_THAN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::EQUALS() {
@@ -6598,8 +7935,13 @@ Object Comp_opContextProxy::EQUALS() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> EQUALS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::GT_EQ() {
@@ -6608,8 +7950,13 @@ Object Comp_opContextProxy::GT_EQ() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> GT_EQ();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::LT_EQ() {
@@ -6618,8 +7965,13 @@ Object Comp_opContextProxy::LT_EQ() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> LT_EQ();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::NOT_EQ_1() {
@@ -6628,8 +7980,13 @@ Object Comp_opContextProxy::NOT_EQ_1() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> NOT_EQ_1();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::NOT_EQ_2() {
@@ -6638,8 +7995,13 @@ Object Comp_opContextProxy::NOT_EQ_2() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> NOT_EQ_2();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::IN() {
@@ -6648,8 +8010,13 @@ Object Comp_opContextProxy::IN() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> IN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::NOT() {
@@ -6658,8 +8025,13 @@ Object Comp_opContextProxy::NOT() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> NOT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_opContextProxy::IS() {
@@ -6668,8 +8040,13 @@ Object Comp_opContextProxy::IS() {
   }
 
   auto token = ((Python3Parser::Comp_opContext*)orig) -> IS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Xor_exprContextProxy::and_expr() {
@@ -6683,7 +8060,7 @@ Object Xor_exprContextProxy::and_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Xor_exprContextProxy::and_exprAt(size_t i) {
@@ -6698,7 +8075,7 @@ Object Xor_exprContextProxy::and_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6710,17 +8087,17 @@ Object Xor_exprContextProxy::XOR() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Xor_exprContext*)orig) -> XOR();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Xor_exprContextProxy::XORAt(size_t i) {
@@ -6729,8 +8106,13 @@ Object Xor_exprContextProxy::XORAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Xor_exprContext*)orig) -> XOR(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object And_exprContextProxy::shift_expr() {
@@ -6744,7 +8126,7 @@ Object And_exprContextProxy::shift_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object And_exprContextProxy::shift_exprAt(size_t i) {
@@ -6759,7 +8141,7 @@ Object And_exprContextProxy::shift_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6771,17 +8153,17 @@ Object And_exprContextProxy::AND_OP() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::And_exprContext*)orig) -> AND_OP();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object And_exprContextProxy::AND_OPAt(size_t i) {
@@ -6790,8 +8172,13 @@ Object And_exprContextProxy::AND_OPAt(size_t i) {
   }
 
   auto token = ((Python3Parser::And_exprContext*)orig) -> AND_OP(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Shift_exprContextProxy::arith_expr() {
@@ -6805,7 +8192,7 @@ Object Shift_exprContextProxy::arith_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Shift_exprContextProxy::arith_exprAt(size_t i) {
@@ -6820,7 +8207,7 @@ Object Shift_exprContextProxy::arith_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6832,17 +8219,17 @@ Object Shift_exprContextProxy::LEFT_SHIFT() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Shift_exprContext*)orig) -> LEFT_SHIFT();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Shift_exprContextProxy::LEFT_SHIFTAt(size_t i) {
@@ -6851,25 +8238,30 @@ Object Shift_exprContextProxy::LEFT_SHIFTAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Shift_exprContext*)orig) -> LEFT_SHIFT(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Shift_exprContextProxy::RIGHT_SHIFT() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Shift_exprContext*)orig) -> RIGHT_SHIFT();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Shift_exprContextProxy::RIGHT_SHIFTAt(size_t i) {
@@ -6878,8 +8270,13 @@ Object Shift_exprContextProxy::RIGHT_SHIFTAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Shift_exprContext*)orig) -> RIGHT_SHIFT(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Arith_exprContextProxy::term() {
@@ -6893,7 +8290,7 @@ Object Arith_exprContextProxy::term() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Arith_exprContextProxy::termAt(size_t i) {
@@ -6908,7 +8305,7 @@ Object Arith_exprContextProxy::termAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -6920,17 +8317,17 @@ Object Arith_exprContextProxy::ADD() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Arith_exprContext*)orig) -> ADD();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Arith_exprContextProxy::ADDAt(size_t i) {
@@ -6939,25 +8336,30 @@ Object Arith_exprContextProxy::ADDAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Arith_exprContext*)orig) -> ADD(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Arith_exprContextProxy::MINUS() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Arith_exprContext*)orig) -> MINUS();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Arith_exprContextProxy::MINUSAt(size_t i) {
@@ -6966,8 +8368,13 @@ Object Arith_exprContextProxy::MINUSAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Arith_exprContext*)orig) -> MINUS(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TermContextProxy::factor() {
@@ -6981,7 +8388,7 @@ Object TermContextProxy::factor() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::factorAt(size_t i) {
@@ -6996,7 +8403,7 @@ Object TermContextProxy::factorAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7008,17 +8415,17 @@ Object TermContextProxy::STAR() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TermContext*)orig) -> STAR();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::STARAt(size_t i) {
@@ -7027,25 +8434,30 @@ Object TermContextProxy::STARAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TermContext*)orig) -> STAR(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TermContextProxy::AT() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TermContext*)orig) -> AT();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::ATAt(size_t i) {
@@ -7054,25 +8466,30 @@ Object TermContextProxy::ATAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TermContext*)orig) -> AT(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TermContextProxy::DIV() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TermContext*)orig) -> DIV();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::DIVAt(size_t i) {
@@ -7081,25 +8498,30 @@ Object TermContextProxy::DIVAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TermContext*)orig) -> DIV(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TermContextProxy::MOD() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TermContext*)orig) -> MOD();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::MODAt(size_t i) {
@@ -7108,25 +8530,30 @@ Object TermContextProxy::MODAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TermContext*)orig) -> MOD(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TermContextProxy::IDIV() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::TermContext*)orig) -> IDIV();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object TermContextProxy::IDIVAt(size_t i) {
@@ -7135,8 +8562,13 @@ Object TermContextProxy::IDIVAt(size_t i) {
   }
 
   auto token = ((Python3Parser::TermContext*)orig) -> IDIV(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FactorContextProxy::factor() {
@@ -7151,7 +8583,7 @@ Object FactorContextProxy::factor() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7171,7 +8603,7 @@ Object FactorContextProxy::power() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7185,8 +8617,13 @@ Object FactorContextProxy::ADD() {
   }
 
   auto token = ((Python3Parser::FactorContext*)orig) -> ADD();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FactorContextProxy::MINUS() {
@@ -7195,8 +8632,13 @@ Object FactorContextProxy::MINUS() {
   }
 
   auto token = ((Python3Parser::FactorContext*)orig) -> MINUS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object FactorContextProxy::NOT_OP() {
@@ -7205,8 +8647,13 @@ Object FactorContextProxy::NOT_OP() {
   }
 
   auto token = ((Python3Parser::FactorContext*)orig) -> NOT_OP();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object PowerContextProxy::atom_expr() {
@@ -7221,7 +8668,7 @@ Object PowerContextProxy::atom_expr() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7241,7 +8688,7 @@ Object PowerContextProxy::factor() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7255,8 +8702,13 @@ Object PowerContextProxy::POWER() {
   }
 
   auto token = ((Python3Parser::PowerContext*)orig) -> POWER();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Atom_exprContextProxy::atom() {
@@ -7271,7 +8723,7 @@ Object Atom_exprContextProxy::atom() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7290,7 +8742,7 @@ Object Atom_exprContextProxy::trailer() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Atom_exprContextProxy::trailerAt(size_t i) {
@@ -7305,7 +8757,7 @@ Object Atom_exprContextProxy::trailerAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7319,8 +8771,13 @@ Object Atom_exprContextProxy::AWAIT() {
   }
 
   auto token = ((Python3Parser::Atom_exprContext*)orig) -> AWAIT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::yield_expr() {
@@ -7335,7 +8792,7 @@ Object AtomContextProxy::yield_expr() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7355,7 +8812,7 @@ Object AtomContextProxy::testlist_comp() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7375,7 +8832,7 @@ Object AtomContextProxy::dictorsetmaker() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7389,8 +8846,13 @@ Object AtomContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::CLOSE_PAREN() {
@@ -7399,8 +8861,13 @@ Object AtomContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::OPEN_BRACK() {
@@ -7409,8 +8876,13 @@ Object AtomContextProxy::OPEN_BRACK() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> OPEN_BRACK();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::CLOSE_BRACK() {
@@ -7419,8 +8891,13 @@ Object AtomContextProxy::CLOSE_BRACK() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> CLOSE_BRACK();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::OPEN_BRACE() {
@@ -7429,8 +8906,13 @@ Object AtomContextProxy::OPEN_BRACE() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> OPEN_BRACE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::CLOSE_BRACE() {
@@ -7439,8 +8921,13 @@ Object AtomContextProxy::CLOSE_BRACE() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> CLOSE_BRACE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::NAME() {
@@ -7449,8 +8936,13 @@ Object AtomContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::NUMBER() {
@@ -7459,8 +8951,13 @@ Object AtomContextProxy::NUMBER() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> NUMBER();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::ELLIPSIS() {
@@ -7469,8 +8966,13 @@ Object AtomContextProxy::ELLIPSIS() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> ELLIPSIS();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::NONE() {
@@ -7479,8 +8981,13 @@ Object AtomContextProxy::NONE() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> NONE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::TRUE() {
@@ -7489,8 +8996,13 @@ Object AtomContextProxy::TRUE() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> TRUE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::FALSE() {
@@ -7499,25 +9011,30 @@ Object AtomContextProxy::FALSE() {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> FALSE();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object AtomContextProxy::STRING() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::AtomContext*)orig) -> STRING();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object AtomContextProxy::STRINGAt(size_t i) {
@@ -7526,8 +9043,13 @@ Object AtomContextProxy::STRINGAt(size_t i) {
   }
 
   auto token = ((Python3Parser::AtomContext*)orig) -> STRING(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::arglist() {
@@ -7542,7 +9064,7 @@ Object TrailerContextProxy::arglist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7562,7 +9084,7 @@ Object TrailerContextProxy::subscriptlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7576,8 +9098,13 @@ Object TrailerContextProxy::OPEN_PAREN() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> OPEN_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::CLOSE_PAREN() {
@@ -7586,8 +9113,13 @@ Object TrailerContextProxy::CLOSE_PAREN() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> CLOSE_PAREN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::OPEN_BRACK() {
@@ -7596,8 +9128,13 @@ Object TrailerContextProxy::OPEN_BRACK() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> OPEN_BRACK();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::CLOSE_BRACK() {
@@ -7606,8 +9143,13 @@ Object TrailerContextProxy::CLOSE_BRACK() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> CLOSE_BRACK();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::DOT() {
@@ -7616,8 +9158,13 @@ Object TrailerContextProxy::DOT() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> DOT();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object TrailerContextProxy::NAME() {
@@ -7626,8 +9173,13 @@ Object TrailerContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::TrailerContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Testlist_compContextProxy::test() {
@@ -7641,7 +9193,7 @@ Object Testlist_compContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_compContextProxy::testAt(size_t i) {
@@ -7656,7 +9208,7 @@ Object Testlist_compContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7675,7 +9227,7 @@ Object Testlist_compContextProxy::star_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_compContextProxy::star_exprAt(size_t i) {
@@ -7690,7 +9242,7 @@ Object Testlist_compContextProxy::star_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7710,7 +9262,7 @@ Object Testlist_compContextProxy::comp_for() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7722,17 +9274,17 @@ Object Testlist_compContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::Testlist_compContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object Testlist_compContextProxy::COMMAAt(size_t i) {
@@ -7741,8 +9293,13 @@ Object Testlist_compContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::Testlist_compContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DictorsetmakerContextProxy::test() {
@@ -7756,7 +9313,7 @@ Object DictorsetmakerContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::testAt(size_t i) {
@@ -7771,7 +9328,7 @@ Object DictorsetmakerContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7790,7 +9347,7 @@ Object DictorsetmakerContextProxy::expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::exprAt(size_t i) {
@@ -7805,7 +9362,7 @@ Object DictorsetmakerContextProxy::exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7825,7 +9382,7 @@ Object DictorsetmakerContextProxy::comp_for() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7844,7 +9401,7 @@ Object DictorsetmakerContextProxy::star_expr() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::star_exprAt(size_t i) {
@@ -7859,7 +9416,7 @@ Object DictorsetmakerContextProxy::star_exprAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7871,17 +9428,17 @@ Object DictorsetmakerContextProxy::COLON() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::DictorsetmakerContext*)orig) -> COLON();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::COLONAt(size_t i) {
@@ -7890,25 +9447,30 @@ Object DictorsetmakerContextProxy::COLONAt(size_t i) {
   }
 
   auto token = ((Python3Parser::DictorsetmakerContext*)orig) -> COLON(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DictorsetmakerContextProxy::POWER() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::DictorsetmakerContext*)orig) -> POWER();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::POWERAt(size_t i) {
@@ -7917,25 +9479,30 @@ Object DictorsetmakerContextProxy::POWERAt(size_t i) {
   }
 
   auto token = ((Python3Parser::DictorsetmakerContext*)orig) -> POWER(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object DictorsetmakerContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::DictorsetmakerContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object DictorsetmakerContextProxy::COMMAAt(size_t i) {
@@ -7944,8 +9511,13 @@ Object DictorsetmakerContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::DictorsetmakerContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_forContextProxy::exprlist() {
@@ -7960,7 +9532,7 @@ Object Comp_forContextProxy::exprlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -7980,7 +9552,7 @@ Object Comp_forContextProxy::or_test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8000,7 +9572,7 @@ Object Comp_forContextProxy::comp_iter() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8014,8 +9586,13 @@ Object Comp_forContextProxy::FOR() {
   }
 
   auto token = ((Python3Parser::Comp_forContext*)orig) -> FOR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_forContextProxy::IN() {
@@ -8024,8 +9601,13 @@ Object Comp_forContextProxy::IN() {
   }
 
   auto token = ((Python3Parser::Comp_forContext*)orig) -> IN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_forContextProxy::ASYNC() {
@@ -8034,8 +9616,13 @@ Object Comp_forContextProxy::ASYNC() {
   }
 
   auto token = ((Python3Parser::Comp_forContext*)orig) -> ASYNC();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SubscriptlistContextProxy::subscript() {
@@ -8049,7 +9636,7 @@ Object SubscriptlistContextProxy::subscript() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object SubscriptlistContextProxy::subscriptAt(size_t i) {
@@ -8064,7 +9651,7 @@ Object SubscriptlistContextProxy::subscriptAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8076,17 +9663,17 @@ Object SubscriptlistContextProxy::COMMA() {
   Array a;
 
   if (orig == nullptr) {
-    return a;
+    return std::move(a);
   }
 
   auto vec = ((Python3Parser::SubscriptlistContext*)orig) -> COMMA();
 
   for (auto it = vec.begin(); it != vec.end(); it ++) {
     TerminalNodeProxy proxy(*it);
-    a.push(proxy);
+    a.push(detail::To_Ruby<TerminalNodeProxy>().convert(proxy));
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object SubscriptlistContextProxy::COMMAAt(size_t i) {
@@ -8095,8 +9682,13 @@ Object SubscriptlistContextProxy::COMMAAt(size_t i) {
   }
 
   auto token = ((Python3Parser::SubscriptlistContext*)orig) -> COMMA(i);
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SubscriptContextProxy::test() {
@@ -8110,7 +9702,7 @@ Object SubscriptContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object SubscriptContextProxy::testAt(size_t i) {
@@ -8125,7 +9717,7 @@ Object SubscriptContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8145,7 +9737,7 @@ Object SubscriptContextProxy::sliceop() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8159,8 +9751,13 @@ Object SubscriptContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::SubscriptContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object SliceopContextProxy::test() {
@@ -8175,7 +9772,7 @@ Object SliceopContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8189,8 +9786,13 @@ Object SliceopContextProxy::COLON() {
   }
 
   auto token = ((Python3Parser::SliceopContext*)orig) -> COLON();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ArgumentContextProxy::test() {
@@ -8204,7 +9806,7 @@ Object ArgumentContextProxy::test() {
     }
   }
 
-  return a;
+  return std::move(a);
 }
 
 Object ArgumentContextProxy::testAt(size_t i) {
@@ -8219,7 +9821,7 @@ Object ArgumentContextProxy::testAt(size_t i) {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8239,7 +9841,7 @@ Object ArgumentContextProxy::comp_for() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8253,8 +9855,13 @@ Object ArgumentContextProxy::ASSIGN() {
   }
 
   auto token = ((Python3Parser::ArgumentContext*)orig) -> ASSIGN();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ArgumentContextProxy::POWER() {
@@ -8263,8 +9870,13 @@ Object ArgumentContextProxy::POWER() {
   }
 
   auto token = ((Python3Parser::ArgumentContext*)orig) -> POWER();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object ArgumentContextProxy::STAR() {
@@ -8273,8 +9885,13 @@ Object ArgumentContextProxy::STAR() {
   }
 
   auto token = ((Python3Parser::ArgumentContext*)orig) -> STAR();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Comp_iterContextProxy::comp_for() {
@@ -8289,7 +9906,7 @@ Object Comp_iterContextProxy::comp_for() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8309,7 +9926,7 @@ Object Comp_iterContextProxy::comp_if() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8329,7 +9946,7 @@ Object Comp_ifContextProxy::test_nocond() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8349,7 +9966,7 @@ Object Comp_ifContextProxy::comp_iter() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8363,8 +9980,13 @@ Object Comp_ifContextProxy::IF() {
   }
 
   auto token = ((Python3Parser::Comp_ifContext*)orig) -> IF();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Encoding_declContextProxy::NAME() {
@@ -8373,8 +9995,13 @@ Object Encoding_declContextProxy::NAME() {
   }
 
   auto token = ((Python3Parser::Encoding_declContext*)orig) -> NAME();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 Object Yield_argContextProxy::test() {
@@ -8389,7 +10016,7 @@ Object Yield_argContextProxy::test() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8409,7 +10036,7 @@ Object Yield_argContextProxy::testlist() {
   }
 
   for (auto child : getChildren()) {
-    if (ctx == from_ruby<ContextProxy>(child).getOriginal()) {
+    if (ctx == detail::From_Ruby<ContextProxy>().convert(child.value()).getOriginal()) {
       return child;
     }
   }
@@ -8423,8 +10050,13 @@ Object Yield_argContextProxy::FROM() {
   }
 
   auto token = ((Python3Parser::Yield_argContext*)orig) -> FROM();
+
+  if (token == nullptr) {
+    return Qnil;
+  }
+
   TerminalNodeProxy proxy(token);
-  return to_ruby(proxy);
+  return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
 }
 
 
@@ -8433,13 +10065,21 @@ public:
   VisitorProxy(Object self) : Director(self) { }
 
   Object ruby_visit(ContextProxy* proxy) {
-    visit(proxy -> getOriginal());
-    return Nil;
+    auto result = visit(proxy -> getOriginal());
+    try {
+      return result.as<Object>();
+    } catch(std::bad_cast) {
+      return Qnil;
+    }
   }
 
   Object ruby_visitChildren(ContextProxy* proxy) {
-    visitChildren(proxy -> getOriginal());
-    return Nil;
+    auto result = visitChildren(proxy -> getOriginal());
+    try {
+      return result.as<Object>();
+    } catch(std::bad_cast) {
+      return Qnil;
+    }
   }
 
   virtual antlrcpp::Any visitSingle_input(Python3Parser::Single_inputContext *ctx) override {
@@ -8894,14 +10534,21 @@ public:
     return parser;
   }
 
+  Object file_input() {
+    auto ctx = this -> parser -> file_input();
+
+    File_inputContextProxy proxy((Python3Parser::File_inputContext*) ctx);
+    return detail::To_Ruby<File_inputContextProxy>().convert(proxy);
+  }
+
   Object visit(VisitorProxy* visitor) {
-    visitor -> visit(this -> parser -> file_input());
+    auto result = visitor -> visit(this -> parser -> file_input());
 
     // reset for the next visit call
     this -> lexer -> reset();
     this -> parser -> reset();
 
-    return Nil;
+    return result;
   }
 
   ~ParserProxy() {
@@ -8931,361 +10578,366 @@ private:
   Python3Parser* parser;
 };
 
-template <>
-Object to_ruby<ParserProxy*>(ParserProxy* const &x) {
-  if (!x) return Nil;
-  return Data_Object<ParserProxy>(x, rb_cParser, nullptr, nullptr);
+namespace Rice::detail {
+  template <>
+  class To_Ruby<ParserProxy*> {
+  public:
+    VALUE convert(ParserProxy* const &x) {
+      if (!x) return Nil;
+      return Data_Object<ParserProxy>(x, false, rb_cParser);
+    }
+  };
 }
 
 
 Object ContextProxy::wrapParseTree(tree::ParseTree* node) {
   if (antlrcpp::is<Python3Parser::Single_inputContext*>(node)) {
     Single_inputContextProxy proxy((Python3Parser::Single_inputContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Single_inputContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Simple_stmtContext*>(node)) {
     Simple_stmtContextProxy proxy((Python3Parser::Simple_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Simple_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Compound_stmtContext*>(node)) {
     Compound_stmtContextProxy proxy((Python3Parser::Compound_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Compound_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::File_inputContext*>(node)) {
     File_inputContextProxy proxy((Python3Parser::File_inputContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<File_inputContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::StmtContext*>(node)) {
     StmtContextProxy proxy((Python3Parser::StmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<StmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Eval_inputContext*>(node)) {
     Eval_inputContextProxy proxy((Python3Parser::Eval_inputContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Eval_inputContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TestlistContext*>(node)) {
     TestlistContextProxy proxy((Python3Parser::TestlistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TestlistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::DecoratorContext*>(node)) {
     DecoratorContextProxy proxy((Python3Parser::DecoratorContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<DecoratorContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Dotted_nameContext*>(node)) {
     Dotted_nameContextProxy proxy((Python3Parser::Dotted_nameContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Dotted_nameContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ArglistContext*>(node)) {
     ArglistContextProxy proxy((Python3Parser::ArglistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ArglistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::DecoratorsContext*>(node)) {
     DecoratorsContextProxy proxy((Python3Parser::DecoratorsContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<DecoratorsContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::DecoratedContext*>(node)) {
     DecoratedContextProxy proxy((Python3Parser::DecoratedContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<DecoratedContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ClassdefContext*>(node)) {
     ClassdefContextProxy proxy((Python3Parser::ClassdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ClassdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::FuncdefContext*>(node)) {
     FuncdefContextProxy proxy((Python3Parser::FuncdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<FuncdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Async_funcdefContext*>(node)) {
     Async_funcdefContextProxy proxy((Python3Parser::Async_funcdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Async_funcdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ParametersContext*>(node)) {
     ParametersContextProxy proxy((Python3Parser::ParametersContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ParametersContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::SuiteContext*>(node)) {
     SuiteContextProxy proxy((Python3Parser::SuiteContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<SuiteContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TestContext*>(node)) {
     TestContextProxy proxy((Python3Parser::TestContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TestContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TypedargslistContext*>(node)) {
     TypedargslistContextProxy proxy((Python3Parser::TypedargslistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TypedargslistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TfpdefContext*>(node)) {
     TfpdefContextProxy proxy((Python3Parser::TfpdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TfpdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::VarargslistContext*>(node)) {
     VarargslistContextProxy proxy((Python3Parser::VarargslistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<VarargslistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::VfpdefContext*>(node)) {
     VfpdefContextProxy proxy((Python3Parser::VfpdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<VfpdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Small_stmtContext*>(node)) {
     Small_stmtContextProxy proxy((Python3Parser::Small_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Small_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Expr_stmtContext*>(node)) {
     Expr_stmtContextProxy proxy((Python3Parser::Expr_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Expr_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Del_stmtContext*>(node)) {
     Del_stmtContextProxy proxy((Python3Parser::Del_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Del_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Pass_stmtContext*>(node)) {
     Pass_stmtContextProxy proxy((Python3Parser::Pass_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Pass_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Flow_stmtContext*>(node)) {
     Flow_stmtContextProxy proxy((Python3Parser::Flow_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Flow_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Import_stmtContext*>(node)) {
     Import_stmtContextProxy proxy((Python3Parser::Import_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Import_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Global_stmtContext*>(node)) {
     Global_stmtContextProxy proxy((Python3Parser::Global_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Global_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Nonlocal_stmtContext*>(node)) {
     Nonlocal_stmtContextProxy proxy((Python3Parser::Nonlocal_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Nonlocal_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Assert_stmtContext*>(node)) {
     Assert_stmtContextProxy proxy((Python3Parser::Assert_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Assert_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Testlist_star_exprContext*>(node)) {
     Testlist_star_exprContextProxy proxy((Python3Parser::Testlist_star_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Testlist_star_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::AnnassignContext*>(node)) {
     AnnassignContextProxy proxy((Python3Parser::AnnassignContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<AnnassignContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::AugassignContext*>(node)) {
     AugassignContextProxy proxy((Python3Parser::AugassignContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<AugassignContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Yield_exprContext*>(node)) {
     Yield_exprContextProxy proxy((Python3Parser::Yield_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Yield_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Star_exprContext*>(node)) {
     Star_exprContextProxy proxy((Python3Parser::Star_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Star_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ExprlistContext*>(node)) {
     ExprlistContextProxy proxy((Python3Parser::ExprlistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ExprlistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Break_stmtContext*>(node)) {
     Break_stmtContextProxy proxy((Python3Parser::Break_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Break_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Continue_stmtContext*>(node)) {
     Continue_stmtContextProxy proxy((Python3Parser::Continue_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Continue_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Return_stmtContext*>(node)) {
     Return_stmtContextProxy proxy((Python3Parser::Return_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Return_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Raise_stmtContext*>(node)) {
     Raise_stmtContextProxy proxy((Python3Parser::Raise_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Raise_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Yield_stmtContext*>(node)) {
     Yield_stmtContextProxy proxy((Python3Parser::Yield_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Yield_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Import_nameContext*>(node)) {
     Import_nameContextProxy proxy((Python3Parser::Import_nameContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Import_nameContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Import_fromContext*>(node)) {
     Import_fromContextProxy proxy((Python3Parser::Import_fromContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Import_fromContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Dotted_as_namesContext*>(node)) {
     Dotted_as_namesContextProxy proxy((Python3Parser::Dotted_as_namesContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Dotted_as_namesContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Import_as_namesContext*>(node)) {
     Import_as_namesContextProxy proxy((Python3Parser::Import_as_namesContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Import_as_namesContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Import_as_nameContext*>(node)) {
     Import_as_nameContextProxy proxy((Python3Parser::Import_as_nameContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Import_as_nameContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Dotted_as_nameContext*>(node)) {
     Dotted_as_nameContextProxy proxy((Python3Parser::Dotted_as_nameContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Dotted_as_nameContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::If_stmtContext*>(node)) {
     If_stmtContextProxy proxy((Python3Parser::If_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<If_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::While_stmtContext*>(node)) {
     While_stmtContextProxy proxy((Python3Parser::While_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<While_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::For_stmtContext*>(node)) {
     For_stmtContextProxy proxy((Python3Parser::For_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<For_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Try_stmtContext*>(node)) {
     Try_stmtContextProxy proxy((Python3Parser::Try_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Try_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::With_stmtContext*>(node)) {
     With_stmtContextProxy proxy((Python3Parser::With_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<With_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Async_stmtContext*>(node)) {
     Async_stmtContextProxy proxy((Python3Parser::Async_stmtContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Async_stmtContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Except_clauseContext*>(node)) {
     Except_clauseContextProxy proxy((Python3Parser::Except_clauseContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Except_clauseContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::With_itemContext*>(node)) {
     With_itemContextProxy proxy((Python3Parser::With_itemContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<With_itemContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ExprContext*>(node)) {
     ExprContextProxy proxy((Python3Parser::ExprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ExprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Or_testContext*>(node)) {
     Or_testContextProxy proxy((Python3Parser::Or_testContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Or_testContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::LambdefContext*>(node)) {
     LambdefContextProxy proxy((Python3Parser::LambdefContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<LambdefContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Test_nocondContext*>(node)) {
     Test_nocondContextProxy proxy((Python3Parser::Test_nocondContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Test_nocondContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Lambdef_nocondContext*>(node)) {
     Lambdef_nocondContextProxy proxy((Python3Parser::Lambdef_nocondContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Lambdef_nocondContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::And_testContext*>(node)) {
     And_testContextProxy proxy((Python3Parser::And_testContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<And_testContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Not_testContext*>(node)) {
     Not_testContextProxy proxy((Python3Parser::Not_testContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Not_testContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ComparisonContext*>(node)) {
     ComparisonContextProxy proxy((Python3Parser::ComparisonContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ComparisonContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Comp_opContext*>(node)) {
     Comp_opContextProxy proxy((Python3Parser::Comp_opContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Comp_opContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Xor_exprContext*>(node)) {
     Xor_exprContextProxy proxy((Python3Parser::Xor_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Xor_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::And_exprContext*>(node)) {
     And_exprContextProxy proxy((Python3Parser::And_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<And_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Shift_exprContext*>(node)) {
     Shift_exprContextProxy proxy((Python3Parser::Shift_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Shift_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Arith_exprContext*>(node)) {
     Arith_exprContextProxy proxy((Python3Parser::Arith_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Arith_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TermContext*>(node)) {
     TermContextProxy proxy((Python3Parser::TermContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TermContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::FactorContext*>(node)) {
     FactorContextProxy proxy((Python3Parser::FactorContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<FactorContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::PowerContext*>(node)) {
     PowerContextProxy proxy((Python3Parser::PowerContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<PowerContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Atom_exprContext*>(node)) {
     Atom_exprContextProxy proxy((Python3Parser::Atom_exprContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Atom_exprContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::AtomContext*>(node)) {
     AtomContextProxy proxy((Python3Parser::AtomContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<AtomContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::TrailerContext*>(node)) {
     TrailerContextProxy proxy((Python3Parser::TrailerContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TrailerContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Testlist_compContext*>(node)) {
     Testlist_compContextProxy proxy((Python3Parser::Testlist_compContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Testlist_compContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::DictorsetmakerContext*>(node)) {
     DictorsetmakerContextProxy proxy((Python3Parser::DictorsetmakerContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<DictorsetmakerContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Comp_forContext*>(node)) {
     Comp_forContextProxy proxy((Python3Parser::Comp_forContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Comp_forContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::SubscriptlistContext*>(node)) {
     SubscriptlistContextProxy proxy((Python3Parser::SubscriptlistContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<SubscriptlistContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::SubscriptContext*>(node)) {
     SubscriptContextProxy proxy((Python3Parser::SubscriptContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<SubscriptContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::SliceopContext*>(node)) {
     SliceopContextProxy proxy((Python3Parser::SliceopContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<SliceopContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::ArgumentContext*>(node)) {
     ArgumentContextProxy proxy((Python3Parser::ArgumentContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<ArgumentContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Comp_iterContext*>(node)) {
     Comp_iterContextProxy proxy((Python3Parser::Comp_iterContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Comp_iterContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Comp_ifContext*>(node)) {
     Comp_ifContextProxy proxy((Python3Parser::Comp_ifContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Comp_ifContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Encoding_declContext*>(node)) {
     Encoding_declContextProxy proxy((Python3Parser::Encoding_declContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Encoding_declContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<Python3Parser::Yield_argContext*>(node)) {
     Yield_argContextProxy proxy((Python3Parser::Yield_argContext*)node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<Yield_argContextProxy>().convert(proxy);
   }
   else if (antlrcpp::is<tree::TerminalNodeImpl*>(node)) {
     TerminalNodeProxy proxy(node);
-    return to_ruby(proxy);
+    return detail::To_Ruby<TerminalNodeProxy>().convert(proxy);
   } else {
     return Nil;
   }
@@ -9296,32 +10948,25 @@ extern "C"
 void Init_python3_parser() {
   Module rb_mPython3Parser = define_module("Python3Parser");
 
-  rb_cToken = rb_mPython3Parser
-    .define_class<Token>("Token")
-    .define_method("text", &Token::getText);
+  rb_cToken = define_class_under<Token>(rb_mPython3Parser, "Token")
+    .define_method("text", &Token::getText)
+    .define_method("channel", &Token::getChannel)
+    .define_method("token_index", &Token::getTokenIndex);
 
-  rb_cParser = rb_mPython3Parser
-    .define_class<ParserProxy>("Parser")
-    .define_singleton_method("parse", &ParserProxy::parse)
-    .define_singleton_method("parse_file", &ParserProxy::parseFile)
-    .define_method("visit", &ParserProxy::visit);
+  rb_cParseTree = define_class_under<tree::ParseTree>(rb_mPython3Parser, "ParseTree");
 
-  rb_cParseTree = rb_mPython3Parser
-    .define_class<tree::ParseTree>("ParseTree");
-
-  rb_cContextProxy = rb_mPython3Parser
-    .define_class<ContextProxy>("Context")
+  rb_cContextProxy = define_class_under<ContextProxy>(rb_mPython3Parser, "Context")
     .define_method("children", &ContextProxy::getChildren)
     .define_method("child_count", &ContextProxy::childCount)
     .define_method("text", &ContextProxy::getText)
+    .define_method("start", &ContextProxy::getStart)
+    .define_method("stop", &ContextProxy::getStop)
     .define_method("parent", &ContextProxy::getParent)
     .define_method("==", &ContextProxy::doubleEquals);
 
-  rb_cTerminalNode = rb_mPython3Parser
-    .define_class<TerminalNodeProxy, ContextProxy>("TerminalNodeImpl");
+  rb_cTerminalNode = define_class_under<TerminalNodeProxy, ContextProxy>(rb_mPython3Parser, "TerminalNodeImpl");
 
-  rb_mPython3Parser
-    .define_class<VisitorProxy>("Visitor")
+  define_class_under<Python3ParserBaseVisitor>(rb_mPython3Parser, "Visitor")
     .define_director<VisitorProxy>()
     .define_constructor(Constructor<VisitorProxy, Object>())
     .define_method("visit", &VisitorProxy::ruby_visit)
@@ -9413,22 +11058,25 @@ void Init_python3_parser() {
     .define_method("visit_yield_expr", &VisitorProxy::ruby_visitChildren)
     .define_method("visit_yield_arg", &VisitorProxy::ruby_visitChildren);
 
-  rb_cSingle_inputContext = rb_mPython3Parser
-    .define_class<Single_inputContextProxy, ContextProxy>("Single_inputContext")
+  rb_cParser = define_class_under<ParserProxy>(rb_mPython3Parser, "Parser")
+    .define_singleton_function("parse", &ParserProxy::parse)
+    .define_singleton_function("parse_file", &ParserProxy::parseFile)
+    .define_method("file_input", &ParserProxy::file_input)
+    .define_method("visit", &ParserProxy::visit);
+
+  rb_cSingle_inputContext = define_class_under<Single_inputContextProxy, ContextProxy>(rb_mPython3Parser, "Single_inputContext")
     .define_method("simple_stmt", &Single_inputContextProxy::simple_stmt)
     .define_method("compound_stmt", &Single_inputContextProxy::compound_stmt)
     .define_method("NEWLINE", &Single_inputContextProxy::NEWLINE);
 
-  rb_cSimple_stmtContext = rb_mPython3Parser
-    .define_class<Simple_stmtContextProxy, ContextProxy>("Simple_stmtContext")
+  rb_cSimple_stmtContext = define_class_under<Simple_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Simple_stmtContext")
     .define_method("small_stmt", &Simple_stmtContextProxy::small_stmt)
     .define_method("small_stmt_at", &Simple_stmtContextProxy::small_stmtAt)
     .define_method("NEWLINE", &Simple_stmtContextProxy::NEWLINE)
     .define_method("SEMI_COLON", &Simple_stmtContextProxy::SEMI_COLON)
     .define_method("SEMI_COLONAt", &Simple_stmtContextProxy::SEMI_COLON);
 
-  rb_cCompound_stmtContext = rb_mPython3Parser
-    .define_class<Compound_stmtContextProxy, ContextProxy>("Compound_stmtContext")
+  rb_cCompound_stmtContext = define_class_under<Compound_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Compound_stmtContext")
     .define_method("if_stmt", &Compound_stmtContextProxy::if_stmt)
     .define_method("while_stmt", &Compound_stmtContextProxy::while_stmt)
     .define_method("for_stmt", &Compound_stmtContextProxy::for_stmt)
@@ -9439,35 +11087,30 @@ void Init_python3_parser() {
     .define_method("decorated", &Compound_stmtContextProxy::decorated)
     .define_method("async_stmt", &Compound_stmtContextProxy::async_stmt);
 
-  rb_cFile_inputContext = rb_mPython3Parser
-    .define_class<File_inputContextProxy, ContextProxy>("File_inputContext")
+  rb_cFile_inputContext = define_class_under<File_inputContextProxy, ContextProxy>(rb_mPython3Parser, "File_inputContext")
     .define_method("stmt", &File_inputContextProxy::stmt)
     .define_method("stmt_at", &File_inputContextProxy::stmtAt)
     .define_method("EOF", &File_inputContextProxy::EOF)
     .define_method("NEWLINE", &File_inputContextProxy::NEWLINE)
     .define_method("NEWLINEAt", &File_inputContextProxy::NEWLINE);
 
-  rb_cStmtContext = rb_mPython3Parser
-    .define_class<StmtContextProxy, ContextProxy>("StmtContext")
+  rb_cStmtContext = define_class_under<StmtContextProxy, ContextProxy>(rb_mPython3Parser, "StmtContext")
     .define_method("simple_stmt", &StmtContextProxy::simple_stmt)
     .define_method("compound_stmt", &StmtContextProxy::compound_stmt);
 
-  rb_cEval_inputContext = rb_mPython3Parser
-    .define_class<Eval_inputContextProxy, ContextProxy>("Eval_inputContext")
+  rb_cEval_inputContext = define_class_under<Eval_inputContextProxy, ContextProxy>(rb_mPython3Parser, "Eval_inputContext")
     .define_method("testlist", &Eval_inputContextProxy::testlist)
     .define_method("EOF", &Eval_inputContextProxy::EOF)
     .define_method("NEWLINE", &Eval_inputContextProxy::NEWLINE)
     .define_method("NEWLINEAt", &Eval_inputContextProxy::NEWLINE);
 
-  rb_cTestlistContext = rb_mPython3Parser
-    .define_class<TestlistContextProxy, ContextProxy>("TestlistContext")
+  rb_cTestlistContext = define_class_under<TestlistContextProxy, ContextProxy>(rb_mPython3Parser, "TestlistContext")
     .define_method("test", &TestlistContextProxy::test)
     .define_method("test_at", &TestlistContextProxy::testAt)
     .define_method("COMMA", &TestlistContextProxy::COMMA)
     .define_method("COMMAAt", &TestlistContextProxy::COMMA);
 
-  rb_cDecoratorContext = rb_mPython3Parser
-    .define_class<DecoratorContextProxy, ContextProxy>("DecoratorContext")
+  rb_cDecoratorContext = define_class_under<DecoratorContextProxy, ContextProxy>(rb_mPython3Parser, "DecoratorContext")
     .define_method("dotted_name", &DecoratorContextProxy::dotted_name)
     .define_method("arglist", &DecoratorContextProxy::arglist)
     .define_method("AT", &DecoratorContextProxy::AT)
@@ -9475,34 +11118,29 @@ void Init_python3_parser() {
     .define_method("OPEN_PAREN", &DecoratorContextProxy::OPEN_PAREN)
     .define_method("CLOSE_PAREN", &DecoratorContextProxy::CLOSE_PAREN);
 
-  rb_cDotted_nameContext = rb_mPython3Parser
-    .define_class<Dotted_nameContextProxy, ContextProxy>("Dotted_nameContext")
+  rb_cDotted_nameContext = define_class_under<Dotted_nameContextProxy, ContextProxy>(rb_mPython3Parser, "Dotted_nameContext")
     .define_method("NAME", &Dotted_nameContextProxy::NAME)
     .define_method("NAMEAt", &Dotted_nameContextProxy::NAME)
     .define_method("DOT", &Dotted_nameContextProxy::DOT)
     .define_method("DOTAt", &Dotted_nameContextProxy::DOT);
 
-  rb_cArglistContext = rb_mPython3Parser
-    .define_class<ArglistContextProxy, ContextProxy>("ArglistContext")
+  rb_cArglistContext = define_class_under<ArglistContextProxy, ContextProxy>(rb_mPython3Parser, "ArglistContext")
     .define_method("argument", &ArglistContextProxy::argument)
     .define_method("argument_at", &ArglistContextProxy::argumentAt)
     .define_method("COMMA", &ArglistContextProxy::COMMA)
     .define_method("COMMAAt", &ArglistContextProxy::COMMA);
 
-  rb_cDecoratorsContext = rb_mPython3Parser
-    .define_class<DecoratorsContextProxy, ContextProxy>("DecoratorsContext")
+  rb_cDecoratorsContext = define_class_under<DecoratorsContextProxy, ContextProxy>(rb_mPython3Parser, "DecoratorsContext")
     .define_method("decorator", &DecoratorsContextProxy::decorator)
     .define_method("decorator_at", &DecoratorsContextProxy::decoratorAt);
 
-  rb_cDecoratedContext = rb_mPython3Parser
-    .define_class<DecoratedContextProxy, ContextProxy>("DecoratedContext")
+  rb_cDecoratedContext = define_class_under<DecoratedContextProxy, ContextProxy>(rb_mPython3Parser, "DecoratedContext")
     .define_method("decorators", &DecoratedContextProxy::decorators)
     .define_method("classdef", &DecoratedContextProxy::classdef)
     .define_method("funcdef", &DecoratedContextProxy::funcdef)
     .define_method("async_funcdef", &DecoratedContextProxy::async_funcdef);
 
-  rb_cClassdefContext = rb_mPython3Parser
-    .define_class<ClassdefContextProxy, ContextProxy>("ClassdefContext")
+  rb_cClassdefContext = define_class_under<ClassdefContextProxy, ContextProxy>(rb_mPython3Parser, "ClassdefContext")
     .define_method("suite", &ClassdefContextProxy::suite)
     .define_method("arglist", &ClassdefContextProxy::arglist)
     .define_method("CLASS", &ClassdefContextProxy::CLASS)
@@ -9511,8 +11149,7 @@ void Init_python3_parser() {
     .define_method("OPEN_PAREN", &ClassdefContextProxy::OPEN_PAREN)
     .define_method("CLOSE_PAREN", &ClassdefContextProxy::CLOSE_PAREN);
 
-  rb_cFuncdefContext = rb_mPython3Parser
-    .define_class<FuncdefContextProxy, ContextProxy>("FuncdefContext")
+  rb_cFuncdefContext = define_class_under<FuncdefContextProxy, ContextProxy>(rb_mPython3Parser, "FuncdefContext")
     .define_method("parameters", &FuncdefContextProxy::parameters)
     .define_method("suite", &FuncdefContextProxy::suite)
     .define_method("test", &FuncdefContextProxy::test)
@@ -9521,19 +11158,16 @@ void Init_python3_parser() {
     .define_method("COLON", &FuncdefContextProxy::COLON)
     .define_method("ARROW", &FuncdefContextProxy::ARROW);
 
-  rb_cAsync_funcdefContext = rb_mPython3Parser
-    .define_class<Async_funcdefContextProxy, ContextProxy>("Async_funcdefContext")
+  rb_cAsync_funcdefContext = define_class_under<Async_funcdefContextProxy, ContextProxy>(rb_mPython3Parser, "Async_funcdefContext")
     .define_method("funcdef", &Async_funcdefContextProxy::funcdef)
     .define_method("ASYNC", &Async_funcdefContextProxy::ASYNC);
 
-  rb_cParametersContext = rb_mPython3Parser
-    .define_class<ParametersContextProxy, ContextProxy>("ParametersContext")
+  rb_cParametersContext = define_class_under<ParametersContextProxy, ContextProxy>(rb_mPython3Parser, "ParametersContext")
     .define_method("typedargslist", &ParametersContextProxy::typedargslist)
     .define_method("OPEN_PAREN", &ParametersContextProxy::OPEN_PAREN)
     .define_method("CLOSE_PAREN", &ParametersContextProxy::CLOSE_PAREN);
 
-  rb_cSuiteContext = rb_mPython3Parser
-    .define_class<SuiteContextProxy, ContextProxy>("SuiteContext")
+  rb_cSuiteContext = define_class_under<SuiteContextProxy, ContextProxy>(rb_mPython3Parser, "SuiteContext")
     .define_method("simple_stmt", &SuiteContextProxy::simple_stmt)
     .define_method("stmt", &SuiteContextProxy::stmt)
     .define_method("stmt_at", &SuiteContextProxy::stmtAt)
@@ -9541,8 +11175,7 @@ void Init_python3_parser() {
     .define_method("INDENT", &SuiteContextProxy::INDENT)
     .define_method("DEDENT", &SuiteContextProxy::DEDENT);
 
-  rb_cTestContext = rb_mPython3Parser
-    .define_class<TestContextProxy, ContextProxy>("TestContext")
+  rb_cTestContext = define_class_under<TestContextProxy, ContextProxy>(rb_mPython3Parser, "TestContext")
     .define_method("or_test", &TestContextProxy::or_test)
     .define_method("or_test_at", &TestContextProxy::or_testAt)
     .define_method("test", &TestContextProxy::test)
@@ -9550,8 +11183,7 @@ void Init_python3_parser() {
     .define_method("IF", &TestContextProxy::IF)
     .define_method("ELSE", &TestContextProxy::ELSE);
 
-  rb_cTypedargslistContext = rb_mPython3Parser
-    .define_class<TypedargslistContextProxy, ContextProxy>("TypedargslistContext")
+  rb_cTypedargslistContext = define_class_under<TypedargslistContextProxy, ContextProxy>(rb_mPython3Parser, "TypedargslistContext")
     .define_method("tfpdef", &TypedargslistContextProxy::tfpdef)
     .define_method("tfpdef_at", &TypedargslistContextProxy::tfpdefAt)
     .define_method("test", &TypedargslistContextProxy::test)
@@ -9563,14 +11195,12 @@ void Init_python3_parser() {
     .define_method("COMMA", &TypedargslistContextProxy::COMMA)
     .define_method("COMMAAt", &TypedargslistContextProxy::COMMA);
 
-  rb_cTfpdefContext = rb_mPython3Parser
-    .define_class<TfpdefContextProxy, ContextProxy>("TfpdefContext")
+  rb_cTfpdefContext = define_class_under<TfpdefContextProxy, ContextProxy>(rb_mPython3Parser, "TfpdefContext")
     .define_method("test", &TfpdefContextProxy::test)
     .define_method("NAME", &TfpdefContextProxy::NAME)
     .define_method("COLON", &TfpdefContextProxy::COLON);
 
-  rb_cVarargslistContext = rb_mPython3Parser
-    .define_class<VarargslistContextProxy, ContextProxy>("VarargslistContext")
+  rb_cVarargslistContext = define_class_under<VarargslistContextProxy, ContextProxy>(rb_mPython3Parser, "VarargslistContext")
     .define_method("vfpdef", &VarargslistContextProxy::vfpdef)
     .define_method("vfpdef_at", &VarargslistContextProxy::vfpdefAt)
     .define_method("test", &VarargslistContextProxy::test)
@@ -9582,12 +11212,10 @@ void Init_python3_parser() {
     .define_method("COMMA", &VarargslistContextProxy::COMMA)
     .define_method("COMMAAt", &VarargslistContextProxy::COMMA);
 
-  rb_cVfpdefContext = rb_mPython3Parser
-    .define_class<VfpdefContextProxy, ContextProxy>("VfpdefContext")
+  rb_cVfpdefContext = define_class_under<VfpdefContextProxy, ContextProxy>(rb_mPython3Parser, "VfpdefContext")
     .define_method("NAME", &VfpdefContextProxy::NAME);
 
-  rb_cSmall_stmtContext = rb_mPython3Parser
-    .define_class<Small_stmtContextProxy, ContextProxy>("Small_stmtContext")
+  rb_cSmall_stmtContext = define_class_under<Small_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Small_stmtContext")
     .define_method("expr_stmt", &Small_stmtContextProxy::expr_stmt)
     .define_method("del_stmt", &Small_stmtContextProxy::del_stmt)
     .define_method("pass_stmt", &Small_stmtContextProxy::pass_stmt)
@@ -9597,8 +11225,7 @@ void Init_python3_parser() {
     .define_method("nonlocal_stmt", &Small_stmtContextProxy::nonlocal_stmt)
     .define_method("assert_stmt", &Small_stmtContextProxy::assert_stmt);
 
-  rb_cExpr_stmtContext = rb_mPython3Parser
-    .define_class<Expr_stmtContextProxy, ContextProxy>("Expr_stmtContext")
+  rb_cExpr_stmtContext = define_class_under<Expr_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Expr_stmtContext")
     .define_method("testlist_star_expr", &Expr_stmtContextProxy::testlist_star_expr)
     .define_method("testlist_star_expr_at", &Expr_stmtContextProxy::testlist_star_exprAt)
     .define_method("annassign", &Expr_stmtContextProxy::annassign)
@@ -9609,53 +11236,45 @@ void Init_python3_parser() {
     .define_method("ASSIGN", &Expr_stmtContextProxy::ASSIGN)
     .define_method("ASSIGNAt", &Expr_stmtContextProxy::ASSIGN);
 
-  rb_cDel_stmtContext = rb_mPython3Parser
-    .define_class<Del_stmtContextProxy, ContextProxy>("Del_stmtContext")
+  rb_cDel_stmtContext = define_class_under<Del_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Del_stmtContext")
     .define_method("exprlist", &Del_stmtContextProxy::exprlist)
     .define_method("DEL", &Del_stmtContextProxy::DEL);
 
-  rb_cPass_stmtContext = rb_mPython3Parser
-    .define_class<Pass_stmtContextProxy, ContextProxy>("Pass_stmtContext")
+  rb_cPass_stmtContext = define_class_under<Pass_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Pass_stmtContext")
     .define_method("PASS", &Pass_stmtContextProxy::PASS);
 
-  rb_cFlow_stmtContext = rb_mPython3Parser
-    .define_class<Flow_stmtContextProxy, ContextProxy>("Flow_stmtContext")
+  rb_cFlow_stmtContext = define_class_under<Flow_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Flow_stmtContext")
     .define_method("break_stmt", &Flow_stmtContextProxy::break_stmt)
     .define_method("continue_stmt", &Flow_stmtContextProxy::continue_stmt)
     .define_method("return_stmt", &Flow_stmtContextProxy::return_stmt)
     .define_method("raise_stmt", &Flow_stmtContextProxy::raise_stmt)
     .define_method("yield_stmt", &Flow_stmtContextProxy::yield_stmt);
 
-  rb_cImport_stmtContext = rb_mPython3Parser
-    .define_class<Import_stmtContextProxy, ContextProxy>("Import_stmtContext")
+  rb_cImport_stmtContext = define_class_under<Import_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Import_stmtContext")
     .define_method("import_name", &Import_stmtContextProxy::import_name)
     .define_method("import_from", &Import_stmtContextProxy::import_from);
 
-  rb_cGlobal_stmtContext = rb_mPython3Parser
-    .define_class<Global_stmtContextProxy, ContextProxy>("Global_stmtContext")
+  rb_cGlobal_stmtContext = define_class_under<Global_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Global_stmtContext")
     .define_method("GLOBAL", &Global_stmtContextProxy::GLOBAL)
     .define_method("NAME", &Global_stmtContextProxy::NAME)
     .define_method("NAMEAt", &Global_stmtContextProxy::NAME)
     .define_method("COMMA", &Global_stmtContextProxy::COMMA)
     .define_method("COMMAAt", &Global_stmtContextProxy::COMMA);
 
-  rb_cNonlocal_stmtContext = rb_mPython3Parser
-    .define_class<Nonlocal_stmtContextProxy, ContextProxy>("Nonlocal_stmtContext")
+  rb_cNonlocal_stmtContext = define_class_under<Nonlocal_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Nonlocal_stmtContext")
     .define_method("NONLOCAL", &Nonlocal_stmtContextProxy::NONLOCAL)
     .define_method("NAME", &Nonlocal_stmtContextProxy::NAME)
     .define_method("NAMEAt", &Nonlocal_stmtContextProxy::NAME)
     .define_method("COMMA", &Nonlocal_stmtContextProxy::COMMA)
     .define_method("COMMAAt", &Nonlocal_stmtContextProxy::COMMA);
 
-  rb_cAssert_stmtContext = rb_mPython3Parser
-    .define_class<Assert_stmtContextProxy, ContextProxy>("Assert_stmtContext")
+  rb_cAssert_stmtContext = define_class_under<Assert_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Assert_stmtContext")
     .define_method("test", &Assert_stmtContextProxy::test)
     .define_method("test_at", &Assert_stmtContextProxy::testAt)
     .define_method("ASSERT", &Assert_stmtContextProxy::ASSERT)
     .define_method("COMMA", &Assert_stmtContextProxy::COMMA);
 
-  rb_cTestlist_star_exprContext = rb_mPython3Parser
-    .define_class<Testlist_star_exprContextProxy, ContextProxy>("Testlist_star_exprContext")
+  rb_cTestlist_star_exprContext = define_class_under<Testlist_star_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Testlist_star_exprContext")
     .define_method("test", &Testlist_star_exprContextProxy::test)
     .define_method("test_at", &Testlist_star_exprContextProxy::testAt)
     .define_method("star_expr", &Testlist_star_exprContextProxy::star_expr)
@@ -9663,15 +11282,13 @@ void Init_python3_parser() {
     .define_method("COMMA", &Testlist_star_exprContextProxy::COMMA)
     .define_method("COMMAAt", &Testlist_star_exprContextProxy::COMMA);
 
-  rb_cAnnassignContext = rb_mPython3Parser
-    .define_class<AnnassignContextProxy, ContextProxy>("AnnassignContext")
+  rb_cAnnassignContext = define_class_under<AnnassignContextProxy, ContextProxy>(rb_mPython3Parser, "AnnassignContext")
     .define_method("test", &AnnassignContextProxy::test)
     .define_method("test_at", &AnnassignContextProxy::testAt)
     .define_method("COLON", &AnnassignContextProxy::COLON)
     .define_method("ASSIGN", &AnnassignContextProxy::ASSIGN);
 
-  rb_cAugassignContext = rb_mPython3Parser
-    .define_class<AugassignContextProxy, ContextProxy>("AugassignContext")
+  rb_cAugassignContext = define_class_under<AugassignContextProxy, ContextProxy>(rb_mPython3Parser, "AugassignContext")
     .define_method("ADD_ASSIGN", &AugassignContextProxy::ADD_ASSIGN)
     .define_method("SUB_ASSIGN", &AugassignContextProxy::SUB_ASSIGN)
     .define_method("MULT_ASSIGN", &AugassignContextProxy::MULT_ASSIGN)
@@ -9686,18 +11303,15 @@ void Init_python3_parser() {
     .define_method("POWER_ASSIGN", &AugassignContextProxy::POWER_ASSIGN)
     .define_method("IDIV_ASSIGN", &AugassignContextProxy::IDIV_ASSIGN);
 
-  rb_cYield_exprContext = rb_mPython3Parser
-    .define_class<Yield_exprContextProxy, ContextProxy>("Yield_exprContext")
+  rb_cYield_exprContext = define_class_under<Yield_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Yield_exprContext")
     .define_method("yield_arg", &Yield_exprContextProxy::yield_arg)
     .define_method("YIELD", &Yield_exprContextProxy::YIELD);
 
-  rb_cStar_exprContext = rb_mPython3Parser
-    .define_class<Star_exprContextProxy, ContextProxy>("Star_exprContext")
+  rb_cStar_exprContext = define_class_under<Star_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Star_exprContext")
     .define_method("expr", &Star_exprContextProxy::expr)
     .define_method("STAR", &Star_exprContextProxy::STAR);
 
-  rb_cExprlistContext = rb_mPython3Parser
-    .define_class<ExprlistContextProxy, ContextProxy>("ExprlistContext")
+  rb_cExprlistContext = define_class_under<ExprlistContextProxy, ContextProxy>(rb_mPython3Parser, "ExprlistContext")
     .define_method("expr", &ExprlistContextProxy::expr)
     .define_method("expr_at", &ExprlistContextProxy::exprAt)
     .define_method("star_expr", &ExprlistContextProxy::star_expr)
@@ -9705,37 +11319,30 @@ void Init_python3_parser() {
     .define_method("COMMA", &ExprlistContextProxy::COMMA)
     .define_method("COMMAAt", &ExprlistContextProxy::COMMA);
 
-  rb_cBreak_stmtContext = rb_mPython3Parser
-    .define_class<Break_stmtContextProxy, ContextProxy>("Break_stmtContext")
+  rb_cBreak_stmtContext = define_class_under<Break_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Break_stmtContext")
     .define_method("BREAK", &Break_stmtContextProxy::BREAK);
 
-  rb_cContinue_stmtContext = rb_mPython3Parser
-    .define_class<Continue_stmtContextProxy, ContextProxy>("Continue_stmtContext")
+  rb_cContinue_stmtContext = define_class_under<Continue_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Continue_stmtContext")
     .define_method("CONTINUE", &Continue_stmtContextProxy::CONTINUE);
 
-  rb_cReturn_stmtContext = rb_mPython3Parser
-    .define_class<Return_stmtContextProxy, ContextProxy>("Return_stmtContext")
+  rb_cReturn_stmtContext = define_class_under<Return_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Return_stmtContext")
     .define_method("testlist", &Return_stmtContextProxy::testlist)
     .define_method("RETURN", &Return_stmtContextProxy::RETURN);
 
-  rb_cRaise_stmtContext = rb_mPython3Parser
-    .define_class<Raise_stmtContextProxy, ContextProxy>("Raise_stmtContext")
+  rb_cRaise_stmtContext = define_class_under<Raise_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Raise_stmtContext")
     .define_method("test", &Raise_stmtContextProxy::test)
     .define_method("test_at", &Raise_stmtContextProxy::testAt)
     .define_method("RAISE", &Raise_stmtContextProxy::RAISE)
     .define_method("FROM", &Raise_stmtContextProxy::FROM);
 
-  rb_cYield_stmtContext = rb_mPython3Parser
-    .define_class<Yield_stmtContextProxy, ContextProxy>("Yield_stmtContext")
+  rb_cYield_stmtContext = define_class_under<Yield_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Yield_stmtContext")
     .define_method("yield_expr", &Yield_stmtContextProxy::yield_expr);
 
-  rb_cImport_nameContext = rb_mPython3Parser
-    .define_class<Import_nameContextProxy, ContextProxy>("Import_nameContext")
+  rb_cImport_nameContext = define_class_under<Import_nameContextProxy, ContextProxy>(rb_mPython3Parser, "Import_nameContext")
     .define_method("dotted_as_names", &Import_nameContextProxy::dotted_as_names)
     .define_method("IMPORT", &Import_nameContextProxy::IMPORT);
 
-  rb_cImport_fromContext = rb_mPython3Parser
-    .define_class<Import_fromContextProxy, ContextProxy>("Import_fromContext")
+  rb_cImport_fromContext = define_class_under<Import_fromContextProxy, ContextProxy>(rb_mPython3Parser, "Import_fromContext")
     .define_method("dotted_name", &Import_fromContextProxy::dotted_name)
     .define_method("import_as_names", &Import_fromContextProxy::import_as_names)
     .define_method("FROM", &Import_fromContextProxy::FROM)
@@ -9748,34 +11355,29 @@ void Init_python3_parser() {
     .define_method("ELLIPSIS", &Import_fromContextProxy::ELLIPSIS)
     .define_method("ELLIPSISAt", &Import_fromContextProxy::ELLIPSIS);
 
-  rb_cDotted_as_namesContext = rb_mPython3Parser
-    .define_class<Dotted_as_namesContextProxy, ContextProxy>("Dotted_as_namesContext")
+  rb_cDotted_as_namesContext = define_class_under<Dotted_as_namesContextProxy, ContextProxy>(rb_mPython3Parser, "Dotted_as_namesContext")
     .define_method("dotted_as_name", &Dotted_as_namesContextProxy::dotted_as_name)
     .define_method("dotted_as_name_at", &Dotted_as_namesContextProxy::dotted_as_nameAt)
     .define_method("COMMA", &Dotted_as_namesContextProxy::COMMA)
     .define_method("COMMAAt", &Dotted_as_namesContextProxy::COMMA);
 
-  rb_cImport_as_namesContext = rb_mPython3Parser
-    .define_class<Import_as_namesContextProxy, ContextProxy>("Import_as_namesContext")
+  rb_cImport_as_namesContext = define_class_under<Import_as_namesContextProxy, ContextProxy>(rb_mPython3Parser, "Import_as_namesContext")
     .define_method("import_as_name", &Import_as_namesContextProxy::import_as_name)
     .define_method("import_as_name_at", &Import_as_namesContextProxy::import_as_nameAt)
     .define_method("COMMA", &Import_as_namesContextProxy::COMMA)
     .define_method("COMMAAt", &Import_as_namesContextProxy::COMMA);
 
-  rb_cImport_as_nameContext = rb_mPython3Parser
-    .define_class<Import_as_nameContextProxy, ContextProxy>("Import_as_nameContext")
+  rb_cImport_as_nameContext = define_class_under<Import_as_nameContextProxy, ContextProxy>(rb_mPython3Parser, "Import_as_nameContext")
     .define_method("NAME", &Import_as_nameContextProxy::NAME)
     .define_method("NAMEAt", &Import_as_nameContextProxy::NAME)
     .define_method("AS", &Import_as_nameContextProxy::AS);
 
-  rb_cDotted_as_nameContext = rb_mPython3Parser
-    .define_class<Dotted_as_nameContextProxy, ContextProxy>("Dotted_as_nameContext")
+  rb_cDotted_as_nameContext = define_class_under<Dotted_as_nameContextProxy, ContextProxy>(rb_mPython3Parser, "Dotted_as_nameContext")
     .define_method("dotted_name", &Dotted_as_nameContextProxy::dotted_name)
     .define_method("AS", &Dotted_as_nameContextProxy::AS)
     .define_method("NAME", &Dotted_as_nameContextProxy::NAME);
 
-  rb_cIf_stmtContext = rb_mPython3Parser
-    .define_class<If_stmtContextProxy, ContextProxy>("If_stmtContext")
+  rb_cIf_stmtContext = define_class_under<If_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "If_stmtContext")
     .define_method("test", &If_stmtContextProxy::test)
     .define_method("test_at", &If_stmtContextProxy::testAt)
     .define_method("suite", &If_stmtContextProxy::suite)
@@ -9787,8 +11389,7 @@ void Init_python3_parser() {
     .define_method("ELIFAt", &If_stmtContextProxy::ELIF)
     .define_method("ELSE", &If_stmtContextProxy::ELSE);
 
-  rb_cWhile_stmtContext = rb_mPython3Parser
-    .define_class<While_stmtContextProxy, ContextProxy>("While_stmtContext")
+  rb_cWhile_stmtContext = define_class_under<While_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "While_stmtContext")
     .define_method("test", &While_stmtContextProxy::test)
     .define_method("suite", &While_stmtContextProxy::suite)
     .define_method("suite_at", &While_stmtContextProxy::suiteAt)
@@ -9797,8 +11398,7 @@ void Init_python3_parser() {
     .define_method("COLONAt", &While_stmtContextProxy::COLON)
     .define_method("ELSE", &While_stmtContextProxy::ELSE);
 
-  rb_cFor_stmtContext = rb_mPython3Parser
-    .define_class<For_stmtContextProxy, ContextProxy>("For_stmtContext")
+  rb_cFor_stmtContext = define_class_under<For_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "For_stmtContext")
     .define_method("exprlist", &For_stmtContextProxy::exprlist)
     .define_method("testlist", &For_stmtContextProxy::testlist)
     .define_method("suite", &For_stmtContextProxy::suite)
@@ -9809,8 +11409,7 @@ void Init_python3_parser() {
     .define_method("COLONAt", &For_stmtContextProxy::COLON)
     .define_method("ELSE", &For_stmtContextProxy::ELSE);
 
-  rb_cTry_stmtContext = rb_mPython3Parser
-    .define_class<Try_stmtContextProxy, ContextProxy>("Try_stmtContext")
+  rb_cTry_stmtContext = define_class_under<Try_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Try_stmtContext")
     .define_method("suite", &Try_stmtContextProxy::suite)
     .define_method("suite_at", &Try_stmtContextProxy::suiteAt)
     .define_method("except_clause", &Try_stmtContextProxy::except_clause)
@@ -9821,8 +11420,7 @@ void Init_python3_parser() {
     .define_method("FINALLY", &Try_stmtContextProxy::FINALLY)
     .define_method("ELSE", &Try_stmtContextProxy::ELSE);
 
-  rb_cWith_stmtContext = rb_mPython3Parser
-    .define_class<With_stmtContextProxy, ContextProxy>("With_stmtContext")
+  rb_cWith_stmtContext = define_class_under<With_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "With_stmtContext")
     .define_method("with_item", &With_stmtContextProxy::with_item)
     .define_method("with_item_at", &With_stmtContextProxy::with_itemAt)
     .define_method("suite", &With_stmtContextProxy::suite)
@@ -9831,81 +11429,69 @@ void Init_python3_parser() {
     .define_method("COMMA", &With_stmtContextProxy::COMMA)
     .define_method("COMMAAt", &With_stmtContextProxy::COMMA);
 
-  rb_cAsync_stmtContext = rb_mPython3Parser
-    .define_class<Async_stmtContextProxy, ContextProxy>("Async_stmtContext")
+  rb_cAsync_stmtContext = define_class_under<Async_stmtContextProxy, ContextProxy>(rb_mPython3Parser, "Async_stmtContext")
     .define_method("funcdef", &Async_stmtContextProxy::funcdef)
     .define_method("with_stmt", &Async_stmtContextProxy::with_stmt)
     .define_method("for_stmt", &Async_stmtContextProxy::for_stmt)
     .define_method("ASYNC", &Async_stmtContextProxy::ASYNC);
 
-  rb_cExcept_clauseContext = rb_mPython3Parser
-    .define_class<Except_clauseContextProxy, ContextProxy>("Except_clauseContext")
+  rb_cExcept_clauseContext = define_class_under<Except_clauseContextProxy, ContextProxy>(rb_mPython3Parser, "Except_clauseContext")
     .define_method("test", &Except_clauseContextProxy::test)
     .define_method("EXCEPT", &Except_clauseContextProxy::EXCEPT)
     .define_method("AS", &Except_clauseContextProxy::AS)
     .define_method("NAME", &Except_clauseContextProxy::NAME);
 
-  rb_cWith_itemContext = rb_mPython3Parser
-    .define_class<With_itemContextProxy, ContextProxy>("With_itemContext")
+  rb_cWith_itemContext = define_class_under<With_itemContextProxy, ContextProxy>(rb_mPython3Parser, "With_itemContext")
     .define_method("test", &With_itemContextProxy::test)
     .define_method("expr", &With_itemContextProxy::expr)
     .define_method("AS", &With_itemContextProxy::AS);
 
-  rb_cExprContext = rb_mPython3Parser
-    .define_class<ExprContextProxy, ContextProxy>("ExprContext")
+  rb_cExprContext = define_class_under<ExprContextProxy, ContextProxy>(rb_mPython3Parser, "ExprContext")
     .define_method("xor_expr", &ExprContextProxy::xor_expr)
     .define_method("xor_expr_at", &ExprContextProxy::xor_exprAt)
     .define_method("OR_OP", &ExprContextProxy::OR_OP)
     .define_method("OR_OPAt", &ExprContextProxy::OR_OP);
 
-  rb_cOr_testContext = rb_mPython3Parser
-    .define_class<Or_testContextProxy, ContextProxy>("Or_testContext")
+  rb_cOr_testContext = define_class_under<Or_testContextProxy, ContextProxy>(rb_mPython3Parser, "Or_testContext")
     .define_method("and_test", &Or_testContextProxy::and_test)
     .define_method("and_test_at", &Or_testContextProxy::and_testAt)
     .define_method("OR", &Or_testContextProxy::OR)
     .define_method("ORAt", &Or_testContextProxy::OR);
 
-  rb_cLambdefContext = rb_mPython3Parser
-    .define_class<LambdefContextProxy, ContextProxy>("LambdefContext")
+  rb_cLambdefContext = define_class_under<LambdefContextProxy, ContextProxy>(rb_mPython3Parser, "LambdefContext")
     .define_method("test", &LambdefContextProxy::test)
     .define_method("varargslist", &LambdefContextProxy::varargslist)
     .define_method("LAMBDA", &LambdefContextProxy::LAMBDA)
     .define_method("COLON", &LambdefContextProxy::COLON);
 
-  rb_cTest_nocondContext = rb_mPython3Parser
-    .define_class<Test_nocondContextProxy, ContextProxy>("Test_nocondContext")
+  rb_cTest_nocondContext = define_class_under<Test_nocondContextProxy, ContextProxy>(rb_mPython3Parser, "Test_nocondContext")
     .define_method("or_test", &Test_nocondContextProxy::or_test)
     .define_method("lambdef_nocond", &Test_nocondContextProxy::lambdef_nocond);
 
-  rb_cLambdef_nocondContext = rb_mPython3Parser
-    .define_class<Lambdef_nocondContextProxy, ContextProxy>("Lambdef_nocondContext")
+  rb_cLambdef_nocondContext = define_class_under<Lambdef_nocondContextProxy, ContextProxy>(rb_mPython3Parser, "Lambdef_nocondContext")
     .define_method("test_nocond", &Lambdef_nocondContextProxy::test_nocond)
     .define_method("varargslist", &Lambdef_nocondContextProxy::varargslist)
     .define_method("LAMBDA", &Lambdef_nocondContextProxy::LAMBDA)
     .define_method("COLON", &Lambdef_nocondContextProxy::COLON);
 
-  rb_cAnd_testContext = rb_mPython3Parser
-    .define_class<And_testContextProxy, ContextProxy>("And_testContext")
+  rb_cAnd_testContext = define_class_under<And_testContextProxy, ContextProxy>(rb_mPython3Parser, "And_testContext")
     .define_method("not_test", &And_testContextProxy::not_test)
     .define_method("not_test_at", &And_testContextProxy::not_testAt)
     .define_method("AND", &And_testContextProxy::AND)
     .define_method("ANDAt", &And_testContextProxy::AND);
 
-  rb_cNot_testContext = rb_mPython3Parser
-    .define_class<Not_testContextProxy, ContextProxy>("Not_testContext")
+  rb_cNot_testContext = define_class_under<Not_testContextProxy, ContextProxy>(rb_mPython3Parser, "Not_testContext")
     .define_method("not_test", &Not_testContextProxy::not_test)
     .define_method("comparison", &Not_testContextProxy::comparison)
     .define_method("NOT", &Not_testContextProxy::NOT);
 
-  rb_cComparisonContext = rb_mPython3Parser
-    .define_class<ComparisonContextProxy, ContextProxy>("ComparisonContext")
+  rb_cComparisonContext = define_class_under<ComparisonContextProxy, ContextProxy>(rb_mPython3Parser, "ComparisonContext")
     .define_method("expr", &ComparisonContextProxy::expr)
     .define_method("expr_at", &ComparisonContextProxy::exprAt)
     .define_method("comp_op", &ComparisonContextProxy::comp_op)
     .define_method("comp_op_at", &ComparisonContextProxy::comp_opAt);
 
-  rb_cComp_opContext = rb_mPython3Parser
-    .define_class<Comp_opContextProxy, ContextProxy>("Comp_opContext")
+  rb_cComp_opContext = define_class_under<Comp_opContextProxy, ContextProxy>(rb_mPython3Parser, "Comp_opContext")
     .define_method("LESS_THAN", &Comp_opContextProxy::LESS_THAN)
     .define_method("GREATER_THAN", &Comp_opContextProxy::GREATER_THAN)
     .define_method("EQUALS", &Comp_opContextProxy::EQUALS)
@@ -9917,22 +11503,19 @@ void Init_python3_parser() {
     .define_method("NOT", &Comp_opContextProxy::NOT)
     .define_method("IS", &Comp_opContextProxy::IS);
 
-  rb_cXor_exprContext = rb_mPython3Parser
-    .define_class<Xor_exprContextProxy, ContextProxy>("Xor_exprContext")
+  rb_cXor_exprContext = define_class_under<Xor_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Xor_exprContext")
     .define_method("and_expr", &Xor_exprContextProxy::and_expr)
     .define_method("and_expr_at", &Xor_exprContextProxy::and_exprAt)
     .define_method("XOR", &Xor_exprContextProxy::XOR)
     .define_method("XORAt", &Xor_exprContextProxy::XOR);
 
-  rb_cAnd_exprContext = rb_mPython3Parser
-    .define_class<And_exprContextProxy, ContextProxy>("And_exprContext")
+  rb_cAnd_exprContext = define_class_under<And_exprContextProxy, ContextProxy>(rb_mPython3Parser, "And_exprContext")
     .define_method("shift_expr", &And_exprContextProxy::shift_expr)
     .define_method("shift_expr_at", &And_exprContextProxy::shift_exprAt)
     .define_method("AND_OP", &And_exprContextProxy::AND_OP)
     .define_method("AND_OPAt", &And_exprContextProxy::AND_OP);
 
-  rb_cShift_exprContext = rb_mPython3Parser
-    .define_class<Shift_exprContextProxy, ContextProxy>("Shift_exprContext")
+  rb_cShift_exprContext = define_class_under<Shift_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Shift_exprContext")
     .define_method("arith_expr", &Shift_exprContextProxy::arith_expr)
     .define_method("arith_expr_at", &Shift_exprContextProxy::arith_exprAt)
     .define_method("LEFT_SHIFT", &Shift_exprContextProxy::LEFT_SHIFT)
@@ -9940,8 +11523,7 @@ void Init_python3_parser() {
     .define_method("RIGHT_SHIFT", &Shift_exprContextProxy::RIGHT_SHIFT)
     .define_method("RIGHT_SHIFTAt", &Shift_exprContextProxy::RIGHT_SHIFT);
 
-  rb_cArith_exprContext = rb_mPython3Parser
-    .define_class<Arith_exprContextProxy, ContextProxy>("Arith_exprContext")
+  rb_cArith_exprContext = define_class_under<Arith_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Arith_exprContext")
     .define_method("term", &Arith_exprContextProxy::term)
     .define_method("term_at", &Arith_exprContextProxy::termAt)
     .define_method("ADD", &Arith_exprContextProxy::ADD)
@@ -9949,8 +11531,7 @@ void Init_python3_parser() {
     .define_method("MINUS", &Arith_exprContextProxy::MINUS)
     .define_method("MINUSAt", &Arith_exprContextProxy::MINUS);
 
-  rb_cTermContext = rb_mPython3Parser
-    .define_class<TermContextProxy, ContextProxy>("TermContext")
+  rb_cTermContext = define_class_under<TermContextProxy, ContextProxy>(rb_mPython3Parser, "TermContext")
     .define_method("factor", &TermContextProxy::factor)
     .define_method("factor_at", &TermContextProxy::factorAt)
     .define_method("STAR", &TermContextProxy::STAR)
@@ -9964,29 +11545,25 @@ void Init_python3_parser() {
     .define_method("IDIV", &TermContextProxy::IDIV)
     .define_method("IDIVAt", &TermContextProxy::IDIV);
 
-  rb_cFactorContext = rb_mPython3Parser
-    .define_class<FactorContextProxy, ContextProxy>("FactorContext")
+  rb_cFactorContext = define_class_under<FactorContextProxy, ContextProxy>(rb_mPython3Parser, "FactorContext")
     .define_method("factor", &FactorContextProxy::factor)
     .define_method("power", &FactorContextProxy::power)
     .define_method("ADD", &FactorContextProxy::ADD)
     .define_method("MINUS", &FactorContextProxy::MINUS)
     .define_method("NOT_OP", &FactorContextProxy::NOT_OP);
 
-  rb_cPowerContext = rb_mPython3Parser
-    .define_class<PowerContextProxy, ContextProxy>("PowerContext")
+  rb_cPowerContext = define_class_under<PowerContextProxy, ContextProxy>(rb_mPython3Parser, "PowerContext")
     .define_method("atom_expr", &PowerContextProxy::atom_expr)
     .define_method("factor", &PowerContextProxy::factor)
     .define_method("POWER", &PowerContextProxy::POWER);
 
-  rb_cAtom_exprContext = rb_mPython3Parser
-    .define_class<Atom_exprContextProxy, ContextProxy>("Atom_exprContext")
+  rb_cAtom_exprContext = define_class_under<Atom_exprContextProxy, ContextProxy>(rb_mPython3Parser, "Atom_exprContext")
     .define_method("atom", &Atom_exprContextProxy::atom)
     .define_method("trailer", &Atom_exprContextProxy::trailer)
     .define_method("trailer_at", &Atom_exprContextProxy::trailerAt)
     .define_method("AWAIT", &Atom_exprContextProxy::AWAIT);
 
-  rb_cAtomContext = rb_mPython3Parser
-    .define_class<AtomContextProxy, ContextProxy>("AtomContext")
+  rb_cAtomContext = define_class_under<AtomContextProxy, ContextProxy>(rb_mPython3Parser, "AtomContext")
     .define_method("yield_expr", &AtomContextProxy::yield_expr)
     .define_method("testlist_comp", &AtomContextProxy::testlist_comp)
     .define_method("dictorsetmaker", &AtomContextProxy::dictorsetmaker)
@@ -10005,8 +11582,7 @@ void Init_python3_parser() {
     .define_method("STRING", &AtomContextProxy::STRING)
     .define_method("STRINGAt", &AtomContextProxy::STRING);
 
-  rb_cTrailerContext = rb_mPython3Parser
-    .define_class<TrailerContextProxy, ContextProxy>("TrailerContext")
+  rb_cTrailerContext = define_class_under<TrailerContextProxy, ContextProxy>(rb_mPython3Parser, "TrailerContext")
     .define_method("arglist", &TrailerContextProxy::arglist)
     .define_method("subscriptlist", &TrailerContextProxy::subscriptlist)
     .define_method("OPEN_PAREN", &TrailerContextProxy::OPEN_PAREN)
@@ -10016,8 +11592,7 @@ void Init_python3_parser() {
     .define_method("DOT", &TrailerContextProxy::DOT)
     .define_method("NAME", &TrailerContextProxy::NAME);
 
-  rb_cTestlist_compContext = rb_mPython3Parser
-    .define_class<Testlist_compContextProxy, ContextProxy>("Testlist_compContext")
+  rb_cTestlist_compContext = define_class_under<Testlist_compContextProxy, ContextProxy>(rb_mPython3Parser, "Testlist_compContext")
     .define_method("test", &Testlist_compContextProxy::test)
     .define_method("test_at", &Testlist_compContextProxy::testAt)
     .define_method("star_expr", &Testlist_compContextProxy::star_expr)
@@ -10026,8 +11601,7 @@ void Init_python3_parser() {
     .define_method("COMMA", &Testlist_compContextProxy::COMMA)
     .define_method("COMMAAt", &Testlist_compContextProxy::COMMA);
 
-  rb_cDictorsetmakerContext = rb_mPython3Parser
-    .define_class<DictorsetmakerContextProxy, ContextProxy>("DictorsetmakerContext")
+  rb_cDictorsetmakerContext = define_class_under<DictorsetmakerContextProxy, ContextProxy>(rb_mPython3Parser, "DictorsetmakerContext")
     .define_method("test", &DictorsetmakerContextProxy::test)
     .define_method("test_at", &DictorsetmakerContextProxy::testAt)
     .define_method("expr", &DictorsetmakerContextProxy::expr)
@@ -10042,8 +11616,7 @@ void Init_python3_parser() {
     .define_method("COMMA", &DictorsetmakerContextProxy::COMMA)
     .define_method("COMMAAt", &DictorsetmakerContextProxy::COMMA);
 
-  rb_cComp_forContext = rb_mPython3Parser
-    .define_class<Comp_forContextProxy, ContextProxy>("Comp_forContext")
+  rb_cComp_forContext = define_class_under<Comp_forContextProxy, ContextProxy>(rb_mPython3Parser, "Comp_forContext")
     .define_method("exprlist", &Comp_forContextProxy::exprlist)
     .define_method("or_test", &Comp_forContextProxy::or_test)
     .define_method("comp_iter", &Comp_forContextProxy::comp_iter)
@@ -10051,27 +11624,23 @@ void Init_python3_parser() {
     .define_method("IN", &Comp_forContextProxy::IN)
     .define_method("ASYNC", &Comp_forContextProxy::ASYNC);
 
-  rb_cSubscriptlistContext = rb_mPython3Parser
-    .define_class<SubscriptlistContextProxy, ContextProxy>("SubscriptlistContext")
+  rb_cSubscriptlistContext = define_class_under<SubscriptlistContextProxy, ContextProxy>(rb_mPython3Parser, "SubscriptlistContext")
     .define_method("subscript", &SubscriptlistContextProxy::subscript)
     .define_method("subscript_at", &SubscriptlistContextProxy::subscriptAt)
     .define_method("COMMA", &SubscriptlistContextProxy::COMMA)
     .define_method("COMMAAt", &SubscriptlistContextProxy::COMMA);
 
-  rb_cSubscriptContext = rb_mPython3Parser
-    .define_class<SubscriptContextProxy, ContextProxy>("SubscriptContext")
+  rb_cSubscriptContext = define_class_under<SubscriptContextProxy, ContextProxy>(rb_mPython3Parser, "SubscriptContext")
     .define_method("test", &SubscriptContextProxy::test)
     .define_method("test_at", &SubscriptContextProxy::testAt)
     .define_method("sliceop", &SubscriptContextProxy::sliceop)
     .define_method("COLON", &SubscriptContextProxy::COLON);
 
-  rb_cSliceopContext = rb_mPython3Parser
-    .define_class<SliceopContextProxy, ContextProxy>("SliceopContext")
+  rb_cSliceopContext = define_class_under<SliceopContextProxy, ContextProxy>(rb_mPython3Parser, "SliceopContext")
     .define_method("test", &SliceopContextProxy::test)
     .define_method("COLON", &SliceopContextProxy::COLON);
 
-  rb_cArgumentContext = rb_mPython3Parser
-    .define_class<ArgumentContextProxy, ContextProxy>("ArgumentContext")
+  rb_cArgumentContext = define_class_under<ArgumentContextProxy, ContextProxy>(rb_mPython3Parser, "ArgumentContext")
     .define_method("test", &ArgumentContextProxy::test)
     .define_method("test_at", &ArgumentContextProxy::testAt)
     .define_method("comp_for", &ArgumentContextProxy::comp_for)
@@ -10079,23 +11648,19 @@ void Init_python3_parser() {
     .define_method("POWER", &ArgumentContextProxy::POWER)
     .define_method("STAR", &ArgumentContextProxy::STAR);
 
-  rb_cComp_iterContext = rb_mPython3Parser
-    .define_class<Comp_iterContextProxy, ContextProxy>("Comp_iterContext")
+  rb_cComp_iterContext = define_class_under<Comp_iterContextProxy, ContextProxy>(rb_mPython3Parser, "Comp_iterContext")
     .define_method("comp_for", &Comp_iterContextProxy::comp_for)
     .define_method("comp_if", &Comp_iterContextProxy::comp_if);
 
-  rb_cComp_ifContext = rb_mPython3Parser
-    .define_class<Comp_ifContextProxy, ContextProxy>("Comp_ifContext")
+  rb_cComp_ifContext = define_class_under<Comp_ifContextProxy, ContextProxy>(rb_mPython3Parser, "Comp_ifContext")
     .define_method("test_nocond", &Comp_ifContextProxy::test_nocond)
     .define_method("comp_iter", &Comp_ifContextProxy::comp_iter)
     .define_method("IF", &Comp_ifContextProxy::IF);
 
-  rb_cEncoding_declContext = rb_mPython3Parser
-    .define_class<Encoding_declContextProxy, ContextProxy>("Encoding_declContext")
+  rb_cEncoding_declContext = define_class_under<Encoding_declContextProxy, ContextProxy>(rb_mPython3Parser, "Encoding_declContext")
     .define_method("NAME", &Encoding_declContextProxy::NAME);
 
-  rb_cYield_argContext = rb_mPython3Parser
-    .define_class<Yield_argContextProxy, ContextProxy>("Yield_argContext")
+  rb_cYield_argContext = define_class_under<Yield_argContextProxy, ContextProxy>(rb_mPython3Parser, "Yield_argContext")
     .define_method("test", &Yield_argContextProxy::test)
     .define_method("testlist", &Yield_argContextProxy::testlist)
     .define_method("FROM", &Yield_argContextProxy::FROM);
